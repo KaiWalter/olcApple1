@@ -109,8 +109,40 @@ uint8_t MC6821::cpuRead(uint16_t addr, bool rdonly)
 {
 	uint16_t reg = addr & 0x03;
 
+	uint8_t data = 0;
 
-	return 0;
+	switch (reg)
+	{
+	case 0: // PA
+
+		nCRA &= 0x3F;  // IRQ flags implicitly cleared by a read
+
+		// mix input and output
+		data |= nORA & nDDRA;
+		data |= nIRA & nDDRA_neg;
+
+		break;
+
+	case 1: // CRA
+		data = nCRA;
+		break;
+
+	case 2: // PB
+
+		nCRB &= 0x3F; // IRQ flags implicitly cleared by a read
+
+		// mix input and output
+		data |= nORB & nDDRB;
+		data |= nIRB & nDDRB_neg;
+
+		break;
+
+	case 3: // CRB
+		data = nCRB;
+		break;
+	}
+
+	return data;
 }
 
 void MC6821::cpuWrite(uint16_t addr, uint8_t data)
