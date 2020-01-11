@@ -211,3 +211,93 @@ void MC6821::cpuWrite(uint16_t addr, uint8_t data)
 	}
 }
 
+void MC6821::setInputA(uint8_t b)
+{
+	nIRA = b;
+}
+
+void MC6821::setInputB(uint8_t b)
+{
+	nIRB = b;
+
+}
+
+void MC6821::setOutputAHandler(t_sendhandlerfunc h)
+{
+	fSendOutputA = h;
+}
+
+void MC6821::setOutputBHandler(t_sendhandlerfunc h)
+{
+	fSendOutputB = h;
+}
+
+void MC6821::setInterruptHandler(t_sendinterrupthandlerfunc h)
+{
+	fSendInterrupt = h;
+}
+
+void MC6821::setCA1(Signal b)
+{
+	// flag interrupt 
+	if (nCA1 != b && (bCRA_Bit1_CA1_PositiveTrans ? Signal::Rise : Signal::Fall) == b)
+	{
+		nCRA |= 0x80; // set bit 7 IRQA1
+		updateIRQ();
+		if (bCRA_Bit5_OutputMode && !bCRA_Bit4_ManualOutput && !bCRA_Bit3_PulseOutput) // handshake mode
+			nCA2 = Signal::Rise;
+	}
+	nCA1 = b;
+}
+
+Signal MC6821::getCA1()
+{
+	return nCA1;
+}
+
+void MC6821::setCA2(Signal b)
+{
+	if (nCA2 != b && (bCRA_Bit4_CA2_PositiveTrans ? Signal::Rise : Signal::Fall) == b)
+	{
+		nCRA |= 0x40; // set bit 6 IRQA2
+		updateIRQ();
+	}
+	nCA2 = b;
+}
+
+Signal MC6821::getCA2()
+{
+	return nCA2;
+}
+
+void MC6821::setCB1(Signal b)
+{
+	if (nCB1 != b && (bCRB_Bit1_CB1_PositiveTrans ? Signal::Rise : Signal::Fall) == b)
+	{
+		nCRB |= 0x80; // set bit 7 IRQB1
+		updateIRQ();
+		if (bCRB_Bit5_OutputMode && !bCRB_Bit4_ManualOutput && !bCRB_Bit3_PulseOutput) // handshake mode
+			nCB2 = Signal::Rise;
+	}
+	nCB1 = b;
+}
+
+Signal MC6821::getCB1()
+{
+	return nCB1;
+}
+
+void MC6821::setCB2(Signal b)
+{
+	if (nCB2 != b && (bCRB_Bit4_CB2_PositiveTrans ? Signal::Rise : Signal::Fall) == b)
+	{
+		nCRB |= 0x40; // set bit 6 IRQB2
+		updateIRQ();
+	}
+	nCB2 = b;
+}
+
+Signal MC6821::getCB2()
+{
+	return nCB2;
+}

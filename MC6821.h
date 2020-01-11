@@ -81,6 +81,23 @@ public:
 	uint8_t cpuRead(uint16_t addr, bool rdonly = false);
 	void    cpuWrite(uint16_t addr, uint8_t  data);
 
+	void setInputA(uint8_t b);
+	void setInputB(uint8_t b);
+
+	void setOutputAHandler(t_sendhandlerfunc h);
+	void setOutputBHandler(t_sendhandlerfunc h);
+	void setInterruptHandler(t_sendinterrupthandlerfunc h);
+
+	void setCA1(Signal b);
+	Signal getCA1();
+	void setCA2(Signal b);
+	Signal getCA2();
+
+	void setCB1(Signal b);
+	Signal getCB1();
+	void setCB2(Signal b);
+	Signal getCB2();
+
 private:
 	void updateControlRegisters();
 	void updateIRQ();
