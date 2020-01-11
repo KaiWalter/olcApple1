@@ -8,6 +8,15 @@
 #define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
 
+/*
+
+Reference material:
+http://www.myapplecomputer.net/apple-1-specs.html
+http://www.applefritter.com/book/export/html/22
+
+*/
+
+
 class Apple1 : public olc::PixelGameEngine
 {
 public:
@@ -100,7 +109,7 @@ public:
 			return false;
 
 		a1bus.insertRom(rom);
-		
+
 		// Set Reset Vector
 		a1bus.ram[0xFFFC] = 0x00;
 		a1bus.ram[0xFFFD] = 0xFF;
@@ -119,8 +128,7 @@ public:
 			do
 			{
 				a1bus.cpu.clock();
-			} 
-			while (!a1bus.cpu.complete());
+			} while (!a1bus.cpu.complete());
 		}
 
 		if (GetKey(olc::Key::R).bPressed)
@@ -143,14 +151,18 @@ public:
 	}
 };
 
-
-
-
-
+/*
+	Initialize and startup the actual emulation
+*/
 int main()
 {
-	Apple1 demo;
-	demo.Construct(680, 480, 2, 2);
-	demo.Start();
+	auto *demo = new Apple1();
+
+	demo->Construct(680, 480, 2, 2);
+
+	demo->Start();
+
+	delete demo;
+
 	return 0;
 }
