@@ -1,5 +1,6 @@
 #include "Bus.h"
 #include "Rom.h"
+#include "MC6821.h"
 
 
 Bus::Bus()
@@ -41,6 +42,10 @@ void Bus::write(uint16_t addr, uint8_t data)
 	{
 		// nothing to do here
 	}
+	else if (addr >= 0xD000 && addr <= 0xD000F)
+	{
+		pia.cpuWrite(addr, data);
+	}
 	else if (addr >= 0x0000 && addr <= 0xFFFF)
 	{
 		ram[addr] = data;
@@ -54,6 +59,10 @@ uint8_t Bus::read(uint16_t addr, bool bReadOnly)
 	if (rom->cpuRead(addr, data))
 	{
 		// nothing to do here
+	}
+	else if (addr >= 0xD000 && addr <= 0xD000F)
+	{
+		data = pia.cpuRead(addr);
 	}
 	else if (addr >= 0x0000 && addr <= 0xFFFF)
 	{

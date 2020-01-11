@@ -3,6 +3,7 @@
 #include <array>
 
 #include "olc6502.h"
+#include "MC6821.h"
 #include "Rom.h"
 
 class Bus
@@ -13,6 +14,7 @@ public:
 
 public: // Devices on bus
 	olc6502 cpu;
+	MC6821 pia;
 
 	std::shared_ptr<Rom> rom;
 

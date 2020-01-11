@@ -127,12 +127,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Bus.cpp" />
+    <ClCompile Include="MC6821.cpp" />
     <ClCompile Include="olc6502.cpp" />
     <ClCompile Include="Apple1.cpp" />
     <ClCompile Include="Rom.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Bus.h" />
+    <ClInclude Include="MC6821.h" />
     <ClInclude Include="olc6502.h" />
     <ClInclude Include="olcPixelGameEngine.h" />
     <ClInclude Include="Rom.h" />
