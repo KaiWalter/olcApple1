@@ -114,6 +114,9 @@ public:
 		a1bus.ram[0xFFFC] = 0x00;
 		a1bus.ram[0xFFFD] = 0xFF;
 
+		// Extract dissassembly
+		mapAsm = a1bus.cpu.disassemble(0xF000, 0xFFFF);
+
 		// Reset
 		a1bus.cpu.reset();
 		return true;
@@ -140,10 +143,9 @@ public:
 		if (GetKey(olc::Key::N).bPressed)
 			a1bus.cpu.nmi();
 
-		DrawRam(2, 2, 0x0000, 16, 16);
-		DrawRam(2, 182, 0xFF00, 16, 16);
-		DrawCpu(448, 2);
-		DrawCode(448, 72, 26);
+		DrawRect(0, 0, 40 * 8, 24 * 8);
+		DrawCpu(40 *8 + 10, 2);
+		DrawCode(40 * 8 + 10, 72, 26);
 
 		DrawString(10, 370, "SPACE = Step Instruction    R = RESET    I = IRQ    N = NMI");
 
