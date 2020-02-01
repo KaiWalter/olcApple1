@@ -26,6 +26,14 @@ public:
 	std::shared_ptr<Rom> rom;
 	std::map<uint16_t, std::string> mapAsm;
 
+	float fResidualTime = 0.0f;
+	uint16_t nRows = 24;
+	uint16_t nCols = 40;
+	uint16_t nCharHeight = 8;
+	uint16_t nCharWidth = 8;
+	uint16_t nScanLine = -1;
+	uint16_t nScanLineFlip = nRows * nCharHeight;
+
 	std::string hex(uint32_t n, uint8_t d)
 	{
 		std::string s(d, '0');
@@ -117,37 +125,54 @@ public:
 		// Extract dissassembly
 		mapAsm = a1bus.cpu.disassemble(0xF000, 0xFFFF);
 
+		SystemReset();
+
+		return true;
+	}
+
+	void SystemReset()
+	{
 		// Reset
 		a1bus.cpu.reset();
-		return true;
+
+		// Clear Screen
+		Clear(olc::BLACK);
+
+		nScanLine = -1;
+	}
+
+	void DrawScanLine()
+	{
+		DrawRect(0, nScanLine, nCols * nCharWidth, 1, olc::BLACK);
+		nScanLine = nScanLine == nScanLineFlip ? 0 : nScanLine + 1;
+		DrawRect(0, nScanLine, nCols * nCharWidth, 1, olc::WHITE);
 	}
 
 	bool OnUserUpdate(float fElapsedTime)
 	{
-		Clear(olc::BLACK);
-
-		if (GetKey(olc::Key::SPACE).bPressed)
+		if (fResidualTime > 0.0f)
+			fResidualTime -= fElapsedTime;
+		else
 		{
-			do
-			{
-				a1bus.cpu.clock();
-			} while (!a1bus.cpu.complete());
+			fResidualTime += (1.0f / 60.0f) - fElapsedTime;
+			DrawScanLine();
 		}
 
-		if (GetKey(olc::Key::R).bPressed)
-			a1bus.cpu.reset();
+		//do
+		//{
+		//	a1bus.cpu.clock();
+		//} while (!a1bus.cpu.complete());
 
-		if (GetKey(olc::Key::I).bPressed)
-			a1bus.cpu.irq();
+		if (GetKey(olc::Key::F5).bPressed)
+		{
+			SystemReset();
+		}
 
-		if (GetKey(olc::Key::N).bPressed)
-			a1bus.cpu.nmi();
-
-		DrawRect(0, 0, 40 * 8, 24 * 8);
-		DrawCpu(40 *8 + 10, 2);
+		DrawRect(0, 0, nCols * nCharWidth, nRows * nCharHeight, olc::BLUE);
+		DrawCpu(40 * 8 + 10, 2);
 		DrawCode(40 * 8 + 10, 72, 26);
 
-		DrawString(10, 370, "SPACE = Step Instruction    R = RESET    I = IRQ    N = NMI");
+		DrawString(10, 370, "F5 = RESET");
 
 		return true;
 	}
@@ -158,7 +183,7 @@ public:
 */
 int main()
 {
-	auto *demo = new Apple1();
+	auto* demo = new Apple1();
 
 	demo->Construct(680, 480, 2, 2);
 
