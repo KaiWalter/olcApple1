@@ -119,6 +119,7 @@ public:
 	bool OnUserCreate()
 	{
 		// Load the cartridge
+		// DISASSEMBLY: https://gist.github.com/robey/1bb6a99cd19e95c81979b1828ad70612
 		rom = std::make_shared<Rom>("Apple1_HexMonitor.rom", 0xFF00);
 		if (!rom->ImageValid())
 			return false;
