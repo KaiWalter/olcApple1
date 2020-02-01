@@ -8,6 +8,7 @@
 #define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
 
+
 /*
 
 Reference material:
@@ -23,16 +24,20 @@ public:
 	Apple1() { sAppName = "Apple 1 Emulator"; }
 
 	Bus a1bus;
+	MC6821 pia;
 	std::shared_ptr<Rom> rom;
 	std::map<uint16_t, std::string> mapAsm;
 
 	float fResidualTime = 0.0f;
-	uint16_t nRows = 24;
-	uint16_t nCols = 40;
-	uint16_t nCharHeight = 8;
-	uint16_t nCharWidth = 8;
+	const static uint8_t nRows = 24;
+	const static uint8_t nCols = 40;
+	const static uint8_t nCharHeight = 8;
+	const static uint8_t nCharWidth = 8;
+	const static uint16_t nScanLineFlip = nRows * nCharHeight;
 	uint16_t nScanLine = -1;
-	uint16_t nScanLineFlip = nRows * nCharHeight;
+	uint8_t  cScreenBuffer[nRows * nCols];
+	uint8_t nCursorRow;
+	uint8_t nCursorCol;
 
 	std::string hex(uint32_t n, uint8_t d)
 	{
@@ -87,10 +92,10 @@ public:
 			while (nLineY < (nLines * 10) + y)
 			{
 				nLineY += 10;
-				if (++it_a != mapAsm.end())
-				{
+				if (++it_a == mapAsm.end())
+					break;
+				else
 					DrawString(x, nLineY, (*it_a).second);
-				}
 			}
 		}
 
@@ -101,10 +106,10 @@ public:
 			while (nLineY > y)
 			{
 				nLineY -= 10;
-				if (--it_a != mapAsm.end())
-				{
+				if (--it_a == mapAsm.begin())
+					break;
+				else
 					DrawString(x, nLineY, (*it_a).second);
-				}
 			}
 		}
 	}
@@ -125,9 +130,16 @@ public:
 		// Extract dissassembly
 		mapAsm = a1bus.cpu.disassemble(0xF000, 0xFFFF);
 
+		pia.setOutputBHandler(ReceiveOutputB);
+
 		SystemReset();
 
 		return true;
+	}
+
+	static void ReceiveOutputB(uint8_t b)
+	{
+		auto& x = b;
 	}
 
 	void SystemReset()
@@ -139,6 +151,11 @@ public:
 		Clear(olc::BLACK);
 
 		nScanLine = -1;
+
+		for (auto& c : cScreenBuffer)
+			c = ' ';
+
+		nCursorRow = nCursorCol = 0;
 	}
 
 	void DrawScanLine()
@@ -150,6 +167,8 @@ public:
 
 	bool OnUserUpdate(float fElapsedTime)
 	{
+		Clear(olc::BLACK);
+
 		if (fResidualTime > 0.0f)
 			fResidualTime -= fElapsedTime;
 		else
@@ -158,17 +177,16 @@ public:
 			DrawScanLine();
 		}
 
-		//do
-		//{
-		//	a1bus.cpu.clock();
-		//} while (!a1bus.cpu.complete());
+		do
+		{
+			a1bus.cpu.clock();
+		} while (!a1bus.cpu.complete());
 
 		if (GetKey(olc::Key::F5).bPressed)
 		{
 			SystemReset();
 		}
 
-		DrawRect(0, 0, nCols * nCharWidth, nRows * nCharHeight, olc::BLUE);
 		DrawCpu(40 * 8 + 10, 2);
 		DrawCode(40 * 8 + 10, 72, 26);
 

@@ -42,7 +42,7 @@ void Bus::write(uint16_t addr, uint8_t data)
 	{
 		// nothing to do here
 	}
-	else if (addr >= 0xD000 && addr <= 0xD000F)
+	else if (addr >= 0xD010 && addr <= 0xD001F)
 	{
 		pia.cpuWrite(addr, data);
 	}
@@ -60,7 +60,7 @@ uint8_t Bus::read(uint16_t addr, bool bReadOnly)
 	{
 		// nothing to do here
 	}
-	else if (addr >= 0xD000 && addr <= 0xD000F)
+	else if (addr >= 0xD010 && addr <= 0xD001F)
 	{
 		data = pia.cpuRead(addr);
 	}
