@@ -36,8 +36,10 @@ public:
 	const static uint16_t nScanLineFlip = nRows * nCharHeight;
 	uint16_t nScanLine = -1;
 	uint8_t  cScreenBuffer[nRows * nCols];
-	uint8_t nCursorRow;
-	uint8_t nCursorCol;
+	uint8_t  cCharacterRom[256][8];
+	uint8_t  cCharacterRomInverted[256][8];
+	uint8_t nCursorY;
+	uint8_t nCursorX;
 
 	std::string hex(uint32_t n, uint8_t d)
 	{
@@ -124,7 +126,9 @@ public:
 		a1bus.insertRom(rom);
 
 		// configure PIA
-		a1bus.pia.setOutputBHandler(ReceiveOutputB);
+		a1bus.pia.setOutputBHandler([&](uint8_t dsp) {
+				ReceiveOutputB(dsp);
+			});
 
 		// Set Reset Vector
 		a1bus.ram[0xFFFC] = 0x00;
@@ -138,10 +142,54 @@ public:
 		return true;
 	}
 
-	static void ReceiveOutputB(uint8_t b)
+	void ReceiveOutputB(uint8_t dsp)
 	{
-		auto& x = b;
+		if (dsp >= 0x61 && dsp <= 0x7A)
+			dsp &= 0x5F; // make lower case key upper
+
+		// clear old cursor
+		RenderCharacter(nCursorX, nCursorY, cCharacterRom[cScreenBuffer[nCursorY * nCols + nCursorX]]);
+
+		// display new character
+		switch (dsp)
+		{
+		case 0x0D:
+			nCursorX = 0;
+			nCursorY++;
+			break;
+		default:
+			if (dsp >= 0x20 && dsp <= 0x5F)
+			{
+				cScreenBuffer[nCursorY * nCols + nCursorX] = dsp;
+
+				RenderCharacter(nCursorX, nCursorY, cCharacterRom[dsp]);
+
+				nCursorX++;
+			}
+			break;
+		}
+
+		// check cursor position
+		if (nCursorX == nCols)
+		{
+			nCursorX = 0;
+			nCursorY++;
+		}
+		if (nCursorY == nRows)
+		{
+			//newLine();
+			nCursorY--;
+		}
+
+		// draw new cursor
+		RenderCharacter(nCursorX, nCursorY, cCharacterRomInverted[cScreenBuffer[nCursorY * nCols + nCursorX]]);
 	}
+
+	void RenderCharacter(uint8_t x, uint8_t y, uint8_t c[])
+	{
+		return;
+	}
+
 
 	void SystemReset()
 	{
@@ -156,7 +204,7 @@ public:
 		for (auto& c : cScreenBuffer)
 			c = ' ';
 
-		nCursorRow = nCursorCol = 0;
+		nCursorY = nCursorX = 0;
 	}
 
 	void DrawScanLine()
@@ -204,7 +252,7 @@ int main()
 {
 	auto* demo = new Apple1();
 
-	demo->Construct(680, 480, 2, 2);
+	demo->Construct(600, 400, 2, 2);
 
 	demo->Start();
 

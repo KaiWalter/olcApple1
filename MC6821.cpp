@@ -222,17 +222,17 @@ void MC6821::setInputB(uint8_t b)
 
 }
 
-void MC6821::setOutputAHandler(t_sendhandlerfunc h)
+void MC6821::setOutputAHandler(std::function<void(uint8_t)> h)
 {
 	fSendOutputA = h;
 }
 
-void MC6821::setOutputBHandler(t_sendhandlerfunc h)
+void MC6821::setOutputBHandler(std::function<void(uint8_t)> h)
 {
 	fSendOutputB = h;
 }
 
-void MC6821::setInterruptHandler(t_sendinterrupthandlerfunc h)
+void MC6821::setInterruptHandler(std::function<void(SignalProcessing::InterruptSignal)> h)
 {
 	fSendInterrupt = h;
 }

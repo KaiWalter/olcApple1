@@ -22,11 +22,6 @@ namespace SignalProcessing
 	};
 }
 
-
-typedef void (*t_sendhandlerfunc)(uint8_t);
-typedef void (*t_receivehandlerfunc)();
-typedef void (*t_sendinterrupthandlerfunc)(SignalProcessing::InterruptSignal);
-
 using namespace SignalProcessing;
 
 class MC6821
@@ -72,9 +67,9 @@ protected:
 	bool bCRB_Bit4_ManualOutput;
 	bool bCRB_Bit5_OutputMode;
 
-	t_sendhandlerfunc fSendOutputA;
-	t_sendhandlerfunc fSendOutputB;
-	t_sendinterrupthandlerfunc fSendInterrupt;
+	std::function<void(uint8_t)> fSendOutputA;
+	std::function<void(uint8_t)> fSendOutputB;
+	std::function<void(SignalProcessing::InterruptSignal)> fSendInterrupt;
 
 public:
 	// Communications with Main Bus
@@ -84,9 +79,9 @@ public:
 	void setInputA(uint8_t b);
 	void setInputB(uint8_t b);
 
-	void setOutputAHandler(t_sendhandlerfunc h);
-	void setOutputBHandler(t_sendhandlerfunc h);
-	void setInterruptHandler(t_sendinterrupthandlerfunc h);
+	void setOutputAHandler(std::function<void(uint8_t)> h);
+	void setOutputBHandler(std::function<void(uint8_t)> h);
+	void setInterruptHandler(std::function<void(SignalProcessing::InterruptSignal)> h);
 
 	void setCA1(Signal b);
 	Signal getCA1();
