@@ -123,14 +123,15 @@ public:
 
 		a1bus.insertRom(rom);
 
+		// configure PIA
+		a1bus.pia.setOutputBHandler(ReceiveOutputB);
+
 		// Set Reset Vector
 		a1bus.ram[0xFFFC] = 0x00;
 		a1bus.ram[0xFFFD] = 0xFF;
 
 		// Extract dissassembly
 		mapAsm = a1bus.cpu.disassemble(0xF000, 0xFFFF);
-
-		pia.setOutputBHandler(ReceiveOutputB);
 
 		SystemReset();
 
