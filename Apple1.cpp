@@ -30,26 +30,33 @@ public:
 	std::map<olc::Key, uint8_t> mapKeys;
 
 private:
-	float fResidualTime = 0.0f;
 	const static uint8_t nRows = 24;
 	const static uint8_t nCols = 40;
 	const static uint8_t nCharHeight = 8;
 	const static uint8_t nCharWidth = 8;
 	const static uint16_t nScanLineFlip = nRows * nCharHeight;
 	uint16_t nScanLine = -1;
-	uint8_t  cScreenBuffer[nRows * nCols];
-	uint8_t  cCharacterRom[256][8];
-	uint8_t  cCharacterRomInverted[256][8];
+	uint8_t cScreenBuffer[nRows * nCols];
+	uint8_t cCharacterRom[256][8];
+	uint8_t cCharacterRomInverted[256][8];
 	uint8_t nCursorY;
 	uint8_t nCursorX;
 
-	std::string displayQueue;
+	float fResidualTime = 0.0f;
 
 	std::string hex(uint32_t n, uint8_t d)
 	{
 		std::string s(d, '0');
 		for (int i = d - 1; i >= 0; i--, n >>= 4)
 			s[i] = "0123456789ABCDEF"[n & 0xF];
+		return s;
+	};
+
+	std::string bin(uint8_t n, uint8_t d)
+	{
+		std::string s(d, '0');
+		for (int i = d - 1; i >= 0; i--, n >>= 1)
+			s[i] = "01"[n & 0x1];
 		return s;
 	};
 
@@ -107,7 +114,7 @@ private:
 
 		it_a = mapAsm.find(a1bus.cpu.pc);
 		nLineY = (nLines >> 1) * 10 + y;
-		if (it_a != mapAsm.end())
+		if (it_a != mapAsm.begin())
 		{
 			while (nLineY > y)
 			{
@@ -122,7 +129,7 @@ private:
 
 	bool OnUserCreate()
 	{
-		// Load the cartridge
+		// load the cartridge
 		rom = std::make_shared<Rom>("Apple1_HexMonitor.rom", 0xFF00);
 		if (!rom->ImageValid())
 			return false;
@@ -140,6 +147,10 @@ private:
 
 		// map keys
 		mapKeys = MapOLCKeyToAppleKey();
+
+		// load character ROMs
+		LoadCharacterRom("Apple1_charmap.rom",cCharacterRom,false);
+		LoadCharacterRom("Apple1_charmap.rom",cCharacterRomInverted,true);
 
 		// extract dissassembly
 		mapAsm = a1bus.cpu.disassemble(0xF000, 0xFFFF);
@@ -188,6 +199,51 @@ private:
 		return mapKey;
 	}
 
+	void LoadCharacterRom(const std::string& sFileName, uint8_t (&rom)[256][8], bool bInvert = false)
+	{
+		std::ifstream ifs;
+		std::vector<uint8_t> vMemory;
+
+		ifs.open(sFileName, std::ifstream::binary);
+		if (ifs.is_open())
+		{
+			vMemory.resize(std::filesystem::file_size(sFileName));
+			ifs.read((char*)vMemory.data(), vMemory.size());
+
+			ifs.close();
+		}
+
+		// feed into character map
+		// flip/reverse bits from right-to-left to left-to-right
+		uint8_t nCharIndex = 0;
+		uint8_t nLineIndex = 0;
+
+		for (int c = 0; c < vMemory.size(); c++)
+		{
+			uint8_t fromMask = 0x80;
+			uint8_t toMask = 0x01;
+			uint8_t bNew = 0;
+			for (int bit = 0; bit < 8; bit++)
+			{
+				if ((vMemory[c] & fromMask) == fromMask) bNew |= toMask;
+				fromMask >>= 1;
+				toMask <<= 1;
+			}
+
+			if (bInvert)
+				rom[nCharIndex][nLineIndex] = bNew;
+			else
+				rom[nCharIndex][nLineIndex] = ~bNew;
+			
+			nLineIndex++;
+			if (nLineIndex == 8)
+			{
+				nLineIndex = 0;
+				nCharIndex++;
+			}
+		}
+	}
+
 	void ReceiveOutputB(uint8_t dsp)
 	{
 		if (dsp >= 0x61 && dsp <= 0x7A)
@@ -206,8 +262,6 @@ private:
 		default:
 			if (dsp >= 0x20 && dsp <= 0x5F)
 			{
-				displayQueue.push_back((char)dsp);
-
 				cScreenBuffer[nCursorY * nCols + nCursorX] = dsp;
 
 				RenderCharacter(nCursorX, nCursorY, cCharacterRom[dsp]);
@@ -304,7 +358,6 @@ private:
 		DrawCode(40 * 8 + 10, 72, 26);
 
 		DrawString(10, 370, "F5 = RESET");
-		DrawString(10, 390, displayQueue);
 
 		return true;
 	}

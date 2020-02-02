@@ -12,7 +12,7 @@ MC6821::MC6821()
 	nIRA = 0xFF;
 	nIRB = 0;
 
-	nCA1 = nCA2 = Signal::Rise;
+	nCA1 = nCA2 = SignalProcessing::Signal::Rise;
 
 	nCRA = nCRB = nORA = nORB = 0;
 
