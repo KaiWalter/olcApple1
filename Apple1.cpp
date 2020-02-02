@@ -14,7 +14,7 @@
 Reference material:
 http://www.myapplecomputer.net/apple-1-specs.html
 http://www.applefritter.com/book/export/html/22
-
+Apple 1 HEXROM DISASSEMBLY: https://gist.github.com/robey/1bb6a99cd19e95c81979b1828ad70612
 */
 
 
@@ -27,7 +27,9 @@ public:
 	MC6821 pia;
 	std::shared_ptr<Rom> rom;
 	std::map<uint16_t, std::string> mapAsm;
+	std::map<olc::Key, uint8_t> mapKeys;
 
+private:
 	float fResidualTime = 0.0f;
 	const static uint8_t nRows = 24;
 	const static uint8_t nCols = 40;
@@ -40,6 +42,8 @@ public:
 	uint8_t  cCharacterRomInverted[256][8];
 	uint8_t nCursorY;
 	uint8_t nCursorX;
+
+	std::string displayQueue;
 
 	std::string hex(uint32_t n, uint8_t d)
 	{
@@ -119,7 +123,6 @@ public:
 	bool OnUserCreate()
 	{
 		// Load the cartridge
-		// DISASSEMBLY: https://gist.github.com/robey/1bb6a99cd19e95c81979b1828ad70612
 		rom = std::make_shared<Rom>("Apple1_HexMonitor.rom", 0xFF00);
 		if (!rom->ImageValid())
 			return false;
@@ -131,16 +134,58 @@ public:
 				ReceiveOutputB(dsp);
 			});
 
-		// Set Reset Vector
+		// set Reset Vector
 		a1bus.ram[0xFFFC] = 0x00;
 		a1bus.ram[0xFFFD] = 0xFF;
 
-		// Extract dissassembly
+		// map keys
+		mapKeys = MapOLCKeyToAppleKey();
+
+		// extract dissassembly
 		mapAsm = a1bus.cpu.disassemble(0xF000, 0xFFFF);
 
 		SystemReset();
 
 		return true;
+	}
+
+
+	std::map<olc::Key, uint8_t> MapOLCKeyToAppleKey()
+	{
+		std::map<olc::Key, uint8_t> mapKey;
+
+		mapKey[olc::Key::BACK] = 0x08;
+		mapKey[olc::Key::ENTER] = 0x0D;
+		mapKey[olc::Key::SPACE] = 0x20;
+
+		mapKey[olc::Key::A] = 0x41;
+		mapKey[olc::Key::B] = 0x42;
+		mapKey[olc::Key::C] = 0x43;
+		mapKey[olc::Key::D] = 0x44;
+		mapKey[olc::Key::E] = 0x45;
+		mapKey[olc::Key::F] = 0x46;
+		mapKey[olc::Key::G] = 0x47;
+		mapKey[olc::Key::H] = 0x48;
+		mapKey[olc::Key::I] = 0x49;
+		mapKey[olc::Key::J] = 0x4A;
+		mapKey[olc::Key::K] = 0x4B;
+		mapKey[olc::Key::L] = 0x4C;
+		mapKey[olc::Key::M] = 0x4D;
+		mapKey[olc::Key::N] = 0x4E;
+		mapKey[olc::Key::O] = 0x4F;
+		mapKey[olc::Key::P] = 0x50;
+		mapKey[olc::Key::Q] = 0x51;
+		mapKey[olc::Key::R] = 0x52;
+		mapKey[olc::Key::S] = 0x53;
+		mapKey[olc::Key::T] = 0x54;
+		mapKey[olc::Key::U] = 0x55;
+		mapKey[olc::Key::V] = 0x56;
+		mapKey[olc::Key::W] = 0x57;
+		mapKey[olc::Key::X] = 0x58;
+		mapKey[olc::Key::Y] = 0x59;
+		mapKey[olc::Key::Z] = 0x5A;
+
+		return mapKey;
 	}
 
 	void ReceiveOutputB(uint8_t dsp)
@@ -161,6 +206,8 @@ public:
 		default:
 			if (dsp >= 0x20 && dsp <= 0x5F)
 			{
+				displayQueue.push_back((char)dsp);
+
 				cScreenBuffer[nCursorY * nCols + nCursorX] = dsp;
 
 				RenderCharacter(nCursorX, nCursorY, cCharacterRom[dsp]);
@@ -232,15 +279,32 @@ public:
 			a1bus.cpu.clock();
 		} while (!a1bus.cpu.complete());
 
+		// check for emulator keys pressed
 		if (GetKey(olc::Key::F5).bPressed)
 		{
 			SystemReset();
+		}
+
+		// check for regular keys pressed
+		for (const auto& k : mapKeys)
+		{
+			if (GetKey(k.first).bPressed)
+			{
+				if (k.second > 0 && k.second < 0x60)
+				{
+					a1bus.pia.setInputA(k.second | 0x80); // bit 7 is constantly set (+5V)
+					a1bus.pia.setCA1(SignalProcessing::Signal::Rise); // send only pulse
+					a1bus.pia.setCA1(SignalProcessing::Signal::Fall); // 20 micro secs are not worth emulating
+				}
+
+			}
 		}
 
 		DrawCpu(40 * 8 + 10, 2);
 		DrawCode(40 * 8 + 10, 72, 26);
 
 		DrawString(10, 370, "F5 = RESET");
+		DrawString(10, 390, displayQueue);
 
 		return true;
 	}
