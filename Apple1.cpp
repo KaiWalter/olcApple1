@@ -175,6 +175,19 @@ private:
 		mapKey[olc::Key::NP_DECIMAL] = 0x2E;
 		mapKey[olc::Key::NP_DIV] = 0x2F;
 
+		mapKey[olc::Key::PERIOD] = 0x2E;
+
+		mapKey[olc::Key::K0] = 0x30;
+		mapKey[olc::Key::K1] = 0x31;
+		mapKey[olc::Key::K2] = 0x32;
+		mapKey[olc::Key::K3] = 0x33;
+		mapKey[olc::Key::K4] = 0x34;
+		mapKey[olc::Key::K5] = 0x35;
+		mapKey[olc::Key::K6] = 0x36;
+		mapKey[olc::Key::K7] = 0x37;
+		mapKey[olc::Key::K8] = 0x38;
+		mapKey[olc::Key::K9] = 0x39;
+
 		mapKey[olc::Key::NP0] = 0x30;
 		mapKey[olc::Key::NP1] = 0x31;
 		mapKey[olc::Key::NP2] = 0x32;
