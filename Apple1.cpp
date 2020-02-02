@@ -364,9 +364,11 @@ private:
 			{
 				if (k.second > 0 && k.second < 0x60)
 				{
+					a1bus.pia.setCA1(SignalProcessing::Signal::Fall); // bring keyboard strobe to low to force active transition
 					a1bus.pia.setInputA(k.second | 0x80); // bit 7 is constantly set (+5V)
 					a1bus.pia.setCA1(SignalProcessing::Signal::Rise); // send only pulse
 					a1bus.pia.setCA1(SignalProcessing::Signal::Fall); // 20 micro secs are not worth emulating
+					break;
 				}
 
 			}

@@ -23,7 +23,6 @@ MC6821::MC6821()
 	fSendOutputA = fSendOutputB = NULL;
 
 	updateControlRegisters();
-
 }
 
 MC6821::~MC6821()
