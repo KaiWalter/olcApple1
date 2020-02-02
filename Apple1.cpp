@@ -25,22 +25,23 @@ public:
 
 	Bus a1bus;
 	MC6821 pia;
+
+private:
 	std::shared_ptr<Rom> rom;
 	std::map<uint16_t, std::string> mapAsm;
 	std::map<olc::Key, uint8_t> mapKeys;
 
-private:
 	const static uint8_t nRows = 24;
 	const static uint8_t nCols = 40;
 	const static uint8_t nCharHeight = 8;
 	const static uint8_t nCharWidth = 8;
-	const static uint16_t nScanLineFlip = nRows * nCharHeight;
-	uint16_t nScanLine = -1;
 	uint8_t cScreenBuffer[nRows * nCols];
 	uint8_t cCharacterRom[256][8];
 	uint8_t cCharacterRomInverted[256][8];
 	uint8_t nCursorY;
 	uint8_t nCursorX;
+
+	olc::Sprite sprScreen = olc::Sprite(nCols*nCharWidth, nRows*nCharHeight);
 
 	float fResidualTime = 0.0f;
 
@@ -138,8 +139,8 @@ private:
 
 		// configure PIA
 		a1bus.pia.setOutputBHandler([&](uint8_t dsp) {
-				ReceiveOutputB(dsp);
-			});
+			ReceiveOutputB(dsp);
+		});
 
 		// set Reset Vector
 		a1bus.ram[0xFFFC] = 0x00;
@@ -149,8 +150,8 @@ private:
 		mapKeys = MapOLCKeyToAppleKey();
 
 		// load character ROMs
-		LoadCharacterRom("Apple1_charmap.rom",cCharacterRom,false);
-		LoadCharacterRom("Apple1_charmap.rom",cCharacterRomInverted,true);
+		LoadCharacterRom("Apple1_charmap.rom", cCharacterRom, false);
+		LoadCharacterRom("Apple1_charmap.rom", cCharacterRomInverted, true);
 
 		// extract dissassembly
 		mapAsm = a1bus.cpu.disassemble(0xF000, 0xFFFF);
@@ -168,6 +169,22 @@ private:
 		mapKey[olc::Key::BACK] = 0x08;
 		mapKey[olc::Key::ENTER] = 0x0D;
 		mapKey[olc::Key::SPACE] = 0x20;
+		mapKey[olc::Key::NP_MUL] = 0x2A;
+		mapKey[olc::Key::NP_ADD] = 0x2B;
+		mapKey[olc::Key::NP_SUB] = 0x2D;
+		mapKey[olc::Key::NP_DECIMAL] = 0x2E;
+		mapKey[olc::Key::NP_DIV] = 0x2F;
+
+		mapKey[olc::Key::NP0] = 0x30;
+		mapKey[olc::Key::NP1] = 0x31;
+		mapKey[olc::Key::NP2] = 0x32;
+		mapKey[olc::Key::NP3] = 0x33;
+		mapKey[olc::Key::NP4] = 0x34;
+		mapKey[olc::Key::NP5] = 0x35;
+		mapKey[olc::Key::NP6] = 0x36;
+		mapKey[olc::Key::NP7] = 0x37;
+		mapKey[olc::Key::NP8] = 0x38;
+		mapKey[olc::Key::NP9] = 0x39;
 
 		mapKey[olc::Key::A] = 0x41;
 		mapKey[olc::Key::B] = 0x42;
@@ -199,7 +216,7 @@ private:
 		return mapKey;
 	}
 
-	void LoadCharacterRom(const std::string& sFileName, uint8_t (&rom)[256][8], bool bInvert = false)
+	void LoadCharacterRom(const std::string& sFileName, uint8_t(&rom)[256][8], bool bInvert = false)
 	{
 		std::ifstream ifs;
 		std::vector<uint8_t> vMemory;
@@ -231,10 +248,10 @@ private:
 			}
 
 			if (bInvert)
-				rom[nCharIndex][nLineIndex] = bNew;
-			else
 				rom[nCharIndex][nLineIndex] = ~bNew;
-			
+			else
+				rom[nCharIndex][nLineIndex] = bNew;
+
 			nLineIndex++;
 			if (nLineIndex == 8)
 			{
@@ -289,9 +306,25 @@ private:
 
 	void RenderCharacter(uint8_t x, uint8_t y, uint8_t c[])
 	{
-		return;
-	}
+		int32_t scanline = y * nCharHeight;
+		int32_t linepos = x * nCharWidth;
 
+		for (int r = 0; r < nCharHeight; r++)
+		{
+			uint8_t mask = c[r];
+			for (int c = nCharWidth; c >= 0; c--, mask >>= 1)
+			{
+				if ((mask & 1) == 1)
+				{
+					sprScreen.SetPixel(linepos + c, scanline + r, olc::DARK_GREEN);
+				}
+				else
+				{
+					sprScreen.SetPixel(linepos + c, scanline + r, olc::BLACK);
+				}
+			}
+		}
+	}
 
 	void SystemReset()
 	{
@@ -299,9 +332,9 @@ private:
 		a1bus.cpu.reset();
 
 		// Clear Screen
-		Clear(olc::BLACK);
-
-		nScanLine = -1;
+		for (int y = 0; y <= sprScreen.height; y++)
+			for (int x = 0; x <= sprScreen.width; x++)
+				sprScreen.SetPixel(x, y, olc::BLACK);
 
 		for (auto& c : cScreenBuffer)
 			c = ' ';
@@ -309,24 +342,9 @@ private:
 		nCursorY = nCursorX = 0;
 	}
 
-	void DrawScanLine()
-	{
-		DrawRect(0, nScanLine, nCols * nCharWidth, 1, olc::BLACK);
-		nScanLine = nScanLine == nScanLineFlip ? 0 : nScanLine + 1;
-		DrawRect(0, nScanLine, nCols * nCharWidth, 1, olc::WHITE);
-	}
-
 	bool OnUserUpdate(float fElapsedTime)
 	{
 		Clear(olc::BLACK);
-
-		if (fResidualTime > 0.0f)
-			fResidualTime -= fElapsedTime;
-		else
-		{
-			fResidualTime += (1.0f / 60.0f) - fElapsedTime;
-			DrawScanLine();
-		}
 
 		do
 		{
@@ -358,6 +376,8 @@ private:
 		DrawCode(40 * 8 + 10, 72, 26);
 
 		DrawString(10, 370, "F5 = RESET");
+
+		DrawSprite(0, 0, &sprScreen);
 
 		return true;
 	}
