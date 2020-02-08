@@ -1,8 +1,9 @@
 #include "Apple1Keyboard.h"
 
-Apple1Keyboard::Apple1Keyboard(MC6821* pia)
+Apple1Keyboard::Apple1Keyboard(MC6821* pia, olc::PixelGameEngine* olc)
 {
 	this->pia = pia;
+	this->olc = olc;
 
 	// map keys
 	mapKeys = MapOLCKeyToAppleKey();
@@ -12,7 +13,7 @@ Apple1Keyboard::~Apple1Keyboard()
 {
 }
 
-void Apple1Keyboard::ProcessKey(olc::PixelGameEngine* olc)
+void Apple1Keyboard::ProcessKey()
 {
 	// check for regular keys pressed
 	for (const auto& k : mapKeys)

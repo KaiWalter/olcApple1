@@ -5,6 +5,15 @@
 
 Bus::Bus()
 {
+	// load the cartridge
+	std::shared_ptr<Rom> rom;
+	rom = std::make_shared<Rom>("Apple1_HexMonitor.rom", 0xFF00);
+	insertRom(rom);
+
+	// set Reset Vector
+	ram[0xFFFC] = 0x00;
+	ram[0xFFFD] = 0xFF;
+
 	// Connect CPU to communication bus
 	cpu.ConnectBus(this);
 

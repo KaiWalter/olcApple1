@@ -28,7 +28,6 @@ public:
 	Apple1Keyboard* a1kbd;
 
 private:
-	std::shared_ptr<Rom> rom;
 	std::map<uint16_t, std::string> mapAsm;
 
 public:
@@ -36,19 +35,12 @@ public:
 	{
 		sAppName = "Apple 1 Emulator";
 
-		// load the cartridge
-		rom = std::make_shared<Rom>("Apple1_HexMonitor.rom", 0xFF00);
-		if (!rom->ImageValid())
-			return;
-
 		a1bus = new Bus();
-		a1bus->insertRom(rom);
 		a1term = new Apple1Terminal(&a1bus->pia);
-		a1kbd = new Apple1Keyboard(&a1bus->pia);
+		a1kbd = new Apple1Keyboard(&a1bus->pia, this);
 
-		// set Reset Vector
-		a1bus->ram[0xFFFC] = 0x00;
-		a1bus->ram[0xFFFD] = 0xFF;
+		// extract dissassembly
+		mapAsm = a1bus->cpu.disassemble(0xF000, 0xFFFF);
 	}
 
 private:
@@ -137,12 +129,6 @@ private:
 
 	bool OnUserCreate()
 	{
-		if (!rom)
-			return false;
-
-		// extract dissassembly
-		mapAsm = a1bus->cpu.disassemble(0xF000, 0xFFFF);
-
 		SystemReset();
 
 		return true;
@@ -161,6 +147,7 @@ private:
 	{
 		Clear(olc::BLACK);
 
+		// process cpu cycle
 		do
 		{
 			a1bus->cpu.clock();
@@ -173,7 +160,8 @@ private:
 		}
 		else
 		{
-			a1kbd->ProcessKey(this);
+			// check for Apple1 Keyboard
+			a1kbd->ProcessKey();
 		}
 
 		DrawCpu(40 * 8 + 10, 2);
