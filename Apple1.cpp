@@ -4,6 +4,8 @@
 #include "Bus.h"
 #include "Rom.h"
 #include "olc6502.h"
+#include "Apple1Terminal.h"
+#include "Apple1Keyboard.h"
 
 #define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
@@ -21,30 +23,41 @@ Apple 1 HEXROM DISASSEMBLY: https://gist.github.com/robey/1bb6a99cd19e95c81979b1
 class Apple1 : public olc::PixelGameEngine
 {
 public:
-	Apple1() { sAppName = "Apple 1 Emulator"; }
-
 	Bus a1bus;
 	MC6821 pia;
+	Apple1Terminal* a1term;
+	Apple1Keyboard* a1kbd;
 
 private:
 	std::shared_ptr<Rom> rom;
 	std::map<uint16_t, std::string> mapAsm;
 	std::map<olc::Key, uint8_t> mapKeys;
 
-	const static uint8_t nRows = 24;
-	const static uint8_t nCols = 40;
-	const static uint8_t nCharHeight = 8;
-	const static uint8_t nCharWidth = 8;
-	uint8_t cScreenBuffer[nRows * nCols];
-	uint8_t cCharacterRom[256][8];
-	uint8_t cCharacterRomInverted[256][8];
-	uint8_t nCursorY;
-	uint8_t nCursorX;
+public:
+	Apple1()
+	{
+		sAppName = "Apple 1 Emulator";
 
-	olc::Sprite sprScreen = olc::Sprite(nCols*nCharWidth, nRows*nCharHeight);
+		// load the cartridge
+		rom = std::make_shared<Rom>("Apple1_HexMonitor.rom", 0xFF00);
+		if (!rom->ImageValid())
+			return;
 
-	float fResidualTime = 0.0f;
+		a1bus.insertRom(rom);
 
+		// configure PIA
+		a1term = new Apple1Terminal(&a1bus.pia);
+		a1kbd = new Apple1Keyboard();
+
+		// set Reset Vector
+		a1bus.ram[0xFFFC] = 0x00;
+		a1bus.ram[0xFFFD] = 0xFF;
+
+		// map keys
+		mapKeys = MapOLCKeyToAppleKey();
+	}
+
+private:
 	std::string hex(uint32_t n, uint8_t d)
 	{
 		std::string s(d, '0');
@@ -130,28 +143,8 @@ private:
 
 	bool OnUserCreate()
 	{
-		// load the cartridge
-		rom = std::make_shared<Rom>("Apple1_HexMonitor.rom", 0xFF00);
-		if (!rom->ImageValid())
+		if (!rom)
 			return false;
-
-		a1bus.insertRom(rom);
-
-		// configure PIA
-		a1bus.pia.setOutputBHandler([&](uint8_t dsp) {
-			ReceiveOutputB(dsp);
-		});
-
-		// set Reset Vector
-		a1bus.ram[0xFFFC] = 0x00;
-		a1bus.ram[0xFFFD] = 0xFF;
-
-		// map keys
-		mapKeys = MapOLCKeyToAppleKey();
-
-		// load character ROMs
-		LoadCharacterRom("Apple1_charmap.rom", cCharacterRom, false);
-		LoadCharacterRom("Apple1_charmap.rom", cCharacterRomInverted, true);
 
 		// extract dissassembly
 		mapAsm = a1bus.cpu.disassemble(0xF000, 0xFFFF);
@@ -229,130 +222,12 @@ private:
 		return mapKey;
 	}
 
-	void LoadCharacterRom(const std::string& sFileName, uint8_t(&rom)[256][8], bool bInvert = false)
-	{
-		std::ifstream ifs;
-		std::vector<uint8_t> vMemory;
-
-		ifs.open(sFileName, std::ifstream::binary);
-		if (ifs.is_open())
-		{
-			vMemory.resize(std::filesystem::file_size(sFileName));
-			ifs.read((char*)vMemory.data(), vMemory.size());
-
-			ifs.close();
-		}
-
-		// feed into character map
-		// flip/reverse bits from right-to-left to left-to-right
-		uint8_t nCharIndex = 0;
-		uint8_t nLineIndex = 0;
-
-		for (int c = 0; c < vMemory.size(); c++)
-		{
-			uint8_t fromMask = 0x80;
-			uint8_t toMask = 0x01;
-			uint8_t bNew = 0;
-			for (int bit = 0; bit < 8; bit++)
-			{
-				if ((vMemory[c] & fromMask) == fromMask) bNew |= toMask;
-				fromMask >>= 1;
-				toMask <<= 1;
-			}
-
-			if (bInvert)
-				rom[nCharIndex][nLineIndex] = ~bNew;
-			else
-				rom[nCharIndex][nLineIndex] = bNew;
-
-			nLineIndex++;
-			if (nLineIndex == 8)
-			{
-				nLineIndex = 0;
-				nCharIndex++;
-			}
-		}
-	}
-
-	void ReceiveOutputB(uint8_t dsp)
-	{
-		if (dsp >= 0x61 && dsp <= 0x7A)
-			dsp &= 0x5F; // make lower case key upper
-
-		// clear old cursor
-		RenderCharacter(nCursorX, nCursorY, cCharacterRom[cScreenBuffer[nCursorY * nCols + nCursorX]]);
-
-		// display new character
-		switch (dsp)
-		{
-		case 0x0D:
-			nCursorX = 0;
-			nCursorY++;
-			break;
-		default:
-			if (dsp >= 0x20 && dsp <= 0x5F)
-			{
-				cScreenBuffer[nCursorY * nCols + nCursorX] = dsp;
-
-				RenderCharacter(nCursorX, nCursorY, cCharacterRom[dsp]);
-
-				nCursorX++;
-			}
-			break;
-		}
-
-		// check cursor position
-		if (nCursorX == nCols)
-		{
-			nCursorX = 0;
-			nCursorY++;
-		}
-		if (nCursorY == nRows)
-		{
-			//newLine();
-			nCursorY--;
-		}
-
-		// draw new cursor
-		RenderCharacter(nCursorX, nCursorY, cCharacterRomInverted[cScreenBuffer[nCursorY * nCols + nCursorX]]);
-	}
-
-	void RenderCharacter(uint8_t x, uint8_t y, uint8_t c[])
-	{
-		int32_t scanline = y * nCharHeight;
-		int32_t linepos = x * nCharWidth;
-
-		for (int r = 0; r < nCharHeight; r++)
-		{
-			uint8_t mask = c[r];
-			for (int c = nCharWidth; c >= 0; c--, mask >>= 1)
-			{
-				if ((mask & 1) == 1)
-				{
-					sprScreen.SetPixel(linepos + c, scanline + r, olc::DARK_GREEN);
-				}
-				else
-				{
-					sprScreen.SetPixel(linepos + c, scanline + r, olc::BLACK);
-				}
-			}
-		}
-	}
-
 	void SystemReset()
 	{
 		// Reset
 		a1bus.cpu.reset();
 
-		// Clear Screen
-		for (int y = 0; y <= sprScreen.height; y++)
-			for (int x = 0; x <= sprScreen.width; x++)
-				sprScreen.SetPixel(x, y, olc::BLACK);
-
-		for (auto& c : cScreenBuffer)
-			c = ' ';
-
-		nCursorY = nCursorX = 0;
+		a1term->ClearScreen();
 	}
 
 	bool OnUserUpdate(float fElapsedTime)
@@ -392,7 +267,7 @@ private:
 
 		DrawString(10, 370, "F5 = RESET");
 
-		DrawSprite(0, 0, &sprScreen);
+		DrawSprite(0, 0, a1term->getScreenSprite());
 
 		return true;
 	}
