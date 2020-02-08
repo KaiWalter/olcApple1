@@ -5,14 +5,9 @@
 
 Bus::Bus()
 {
-	// load the cartridge
-	std::shared_ptr<Rom> rom;
-	rom = std::make_shared<Rom>("Apple1_HexMonitor.rom", 0xFF00);
-	insertRom(rom);
-
-	// NOT YET WORKING:!!!!
-	//rom = std::make_shared<Rom>("Apple1_basic.rom", 0xE000);
-	//insertRom(rom);
+	// load the cartridges
+	roms.push_back(std::make_shared<Rom>("Apple1_HexMonitor.rom", 0xFF00));
+	roms.push_back(std::make_shared<Rom>("Apple1_basic.rom", 0xE000));
 
 	// set Reset Vector
 	ram[0xFFFC] = 0x00;
@@ -30,12 +25,6 @@ Bus::~Bus()
 {
 }
 
-void Bus::insertRom(const std::shared_ptr<Rom>& rom)
-{
-	// Connects Rom to Main Bus
-	this->rom = rom;
-}
-
 void Bus::reset()
 {
 	cpu.reset();
@@ -51,11 +40,13 @@ void Bus::clock()
 
 void Bus::write(uint16_t addr, uint8_t data)
 {
-	if (rom->cpuWrite(addr, data))
+	for (auto r : roms)
 	{
-		// nothing to do here
+		if(r->cpuWrite(addr, data))
+			return;
 	}
-	else if (addr >= 0xD010 && addr <= 0xD001F)
+
+	if (addr >= 0xD010 && addr <= 0xD001F)
 	{
 		pia.cpuWrite(addr, data);
 	}
@@ -69,11 +60,13 @@ uint8_t Bus::read(uint16_t addr, bool bReadOnly)
 {
 	uint8_t data = 0x00;
 
-	if (rom->cpuRead(addr, data))
+	for (auto r : roms)
 	{
-		// nothing to do here
+		if (r->cpuRead(addr, data))
+			return data;
 	}
-	else if (addr >= 0xD010 && addr <= 0xD001F)
+
+	if (addr >= 0xD010 && addr <= 0xD001F)
 	{
 		data = pia.cpuRead(addr);
 	}

@@ -9,7 +9,7 @@
 Rom::Rom(const std::string& sFileName, uint16_t iOffset)
 {
 	std::ifstream ifs;
-	
+
 	// init
 	this->bImageValid = false;
 	this->iOffset = 0;
@@ -41,24 +41,30 @@ bool Rom::ImageValid()
 
 bool Rom::cpuRead(uint16_t addr, uint8_t& data)
 {
-	uint32_t mapped_addr = addr - iOffset;
-	if (mapped_addr >= 0 and mapped_addr <= iSize)
+	if (addr >= iOffset)
 	{
-		data = vMemory[mapped_addr];
-		return true;
+		uint32_t mapped_addr = addr - iOffset;
+		if (mapped_addr >= 0 and mapped_addr < iSize)
+		{
+			data = vMemory[mapped_addr];
+			return true;
+		}
 	}
-	else
-		return false;
+
+	return false;
 }
 
 bool Rom::cpuWrite(uint16_t addr, uint8_t data)
 {
-	uint32_t mapped_addr = addr - iOffset;
-	if (mapped_addr >= 0 and mapped_addr <= iSize)
+	if (addr >= iOffset)
 	{
-		vMemory[mapped_addr] = data;
-		return true;
+		uint32_t mapped_addr = addr - iOffset;
+		if (mapped_addr >= 0 and mapped_addr < iSize)
+		{
+			vMemory[mapped_addr] = data;
+			return true;
+		}
 	}
-	else
-		return false;
+
+	return false;
 }

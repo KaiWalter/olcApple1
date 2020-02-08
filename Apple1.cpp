@@ -40,7 +40,7 @@ public:
 		a1kbd = new Apple1Keyboard(&a1bus->pia, this);
 
 		// extract dissassembly
-		mapAsm = a1bus->cpu.disassemble(0xF000, 0xFFFF);
+		mapAsm = a1bus->cpu.disassemble(0xE000, 0xFFFF);
 	}
 
 private:

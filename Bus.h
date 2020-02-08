@@ -16,7 +16,7 @@ public: // Devices on bus
 	olc6502 cpu;
 	MC6821 pia;
 
-	std::shared_ptr<Rom> rom;
+	std::list<std::shared_ptr<Rom>> roms;
 
 	std::array<uint8_t, 64 * 1024> ram;
 
@@ -30,8 +30,6 @@ private:
 	uint32_t nSystemClockCounter = 0;
 
 public: // System Interface
-	// Connects a Rom object to the internal buses
-	void insertRom(const std::shared_ptr<Rom>& rom);
 	// Resets the system
 	void reset();
 	// Clocks the system - a single whole systme tick
