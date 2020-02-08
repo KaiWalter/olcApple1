@@ -4,3 +4,6 @@ Apple 1 emulator based on [OneLoneCoder NES emulation components](https://github
 
 > Feb 2020 : This is just an exercise for me to brush up my C++ skills which had been dormant for over 2 decades.
 
+## Apple 1 with Hex Monitor
+
+![](/img/Apple1_HexMon.png)

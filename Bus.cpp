@@ -10,6 +10,10 @@ Bus::Bus()
 	rom = std::make_shared<Rom>("Apple1_HexMonitor.rom", 0xFF00);
 	insertRom(rom);
 
+	// NOT YET WORKING:!!!!
+	//rom = std::make_shared<Rom>("Apple1_basic.rom", 0xE000);
+	//insertRom(rom);
+
 	// set Reset Vector
 	ram[0xFFFC] = 0x00;
 	ram[0xFFFD] = 0xFF;
