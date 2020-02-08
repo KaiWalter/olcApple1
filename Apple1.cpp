@@ -29,6 +29,7 @@ public:
 
 private:
 	std::map<uint16_t, std::string> mapAsm;
+	bool runEmulator = true;
 
 public:
 	Apple1()
@@ -145,18 +146,32 @@ private:
 
 	bool OnUserUpdate(float fElapsedTime)
 	{
-		Clear(olc::BLACK);
+		Clear(olc::DARK_BLUE);
 
 		// process cpu cycle
-		do
+		if (runEmulator)
 		{
-			a1bus->cpu.clock();
-		} while (!a1bus->cpu.complete());
+			do
+			{
+				a1bus->cpu.clock();
+			} while (!a1bus->cpu.complete());
+		}
 
 		// check for emulator keys pressed
-		if (GetKey(olc::Key::F5).bPressed)
+		if (GetKey(olc::Key::F2).bPressed)
+		{
+			do
+			{
+				a1bus->cpu.clock();
+			} while (!a1bus->cpu.complete());
+		}
+		else if (GetKey(olc::Key::ESCAPE).bPressed)
 		{
 			SystemReset();
+		}
+		else if (GetKey(olc::Key::F5).bPressed)
+		{
+			runEmulator = !runEmulator;
 		}
 		else
 		{
@@ -167,9 +182,9 @@ private:
 		DrawCpu(40 * 8 + 10, 2);
 		DrawCode(40 * 8 + 10, 72, 26);
 
-		DrawString(10, 370, "F5 = RESET");
+		DrawString(10, 370, "ESC = RESET  F5 = run or single step  F2 = step");
 
-		DrawSprite(0, 0, a1term->getScreenSprite());
+		DrawSprite(0, 72, a1term->getScreenSprite());
 
 		return true;
 	}
