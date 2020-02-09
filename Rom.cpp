@@ -12,22 +12,20 @@ Rom::Rom(const std::string& sFileName, uint16_t iOffset)
 
 	// init
 	this->bImageValid = false;
-	this->iOffset = 0;
-	this->iSize = 0;
+	this->nOffset = 0;
+	this->nSize = 0;
 
 	// try to read ROM file
 	ifs.open(sFileName, std::ifstream::binary);
 	if (ifs.is_open())
 	{
 		auto nSize = std::filesystem::file_size(sFileName);
-		if (nSize > 0xffff)
-			nSize = 0xffff;
 
 		vMemory.resize(nSize);
 		ifs.read((char*)vMemory.data(), vMemory.size());
 
-		this->iOffset = iOffset;
-		this->iSize = nSize;
+		this->nOffset = iOffset;
+		this->nSize = nSize;
 		this->bImageValid = true;
 
 		ifs.close();
@@ -45,10 +43,10 @@ bool Rom::ImageValid()
 
 bool Rom::cpuRead(uint16_t addr, uint8_t& data)
 {
-	if (addr >= iOffset)
+	if (addr >= nOffset)
 	{
-		uint32_t mapped_addr = addr - iOffset;
-		if (mapped_addr >= 0 and mapped_addr < iSize)
+		uint32_t mapped_addr = addr - nOffset;
+		if (mapped_addr >= 0 and mapped_addr < nSize)
 		{
 			data = vMemory[mapped_addr];
 			return true;
@@ -60,10 +58,10 @@ bool Rom::cpuRead(uint16_t addr, uint8_t& data)
 
 bool Rom::cpuWrite(uint16_t addr, uint8_t data)
 {
-	if (addr >= iOffset)
+	if (addr >= nOffset)
 	{
-		uint32_t mapped_addr = addr - iOffset;
-		if (mapped_addr >= 0 and mapped_addr < iSize)
+		uint32_t mapped_addr = addr - nOffset;
+		if (mapped_addr >= 0 and mapped_addr < nSize)
 		{
 			vMemory[mapped_addr] = data;
 			return true;
@@ -75,10 +73,10 @@ bool Rom::cpuWrite(uint16_t addr, uint8_t data)
 
 uint16_t Rom::Low()
 {
-	return iOffset;
+	return nOffset;
 }
 
 uint16_t Rom::High()
 {
-	return iOffset + iSize - 1;
+	return nOffset + nSize - 1;
 }

@@ -12,7 +12,7 @@ Bus::Bus()
 #ifdef TESTROM
 	auto rom = std::make_shared<Rom>("6502_functional_test.bin", 0x0000);
 
-	for (uintmax_t addr = 0x0000; addr < 0xFFFF; addr++)
+	for (uintmax_t addr = 0x0000; addr <= 0xFFFF; addr++)
 	{
 		uint8_t data = 0x00;
 		rom->cpuRead(addr, data);

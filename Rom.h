@@ -23,6 +23,6 @@ private:
 	bool bImageValid = false;
 
 	std::vector<uint8_t> vMemory;
-	uint16_t iOffset;
-	uint16_t iSize;
+	uint16_t nOffset;
+	uintmax_t nSize;
 };
