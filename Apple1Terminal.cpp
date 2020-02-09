@@ -22,7 +22,7 @@ void Apple1Terminal::ClearScreen()
 	for (int y = 0; y <= sprScreen.height; y++)
 		for (int x = 0; x <= sprScreen.width; x++)
 			sprScreen.SetPixel(x, y, olc::BLACK);
-	
+
 	for (auto& c : cScreenBuffer)
 		c = ' ';
 
@@ -36,10 +36,11 @@ olc::Sprite* Apple1Terminal::getScreenSprite()
 
 void Apple1Terminal::ReceiveOutput(uint8_t dsp)
 {
+	// make lower case key upper
 	if (dsp >= 0x61 && dsp <= 0x7A)
-		dsp &= 0x5F; // make lower case key upper
+		dsp &= 0x5F;
 
-		// clear old cursor
+	// clear old cursor
 	RenderCharacter(nCursorX, nCursorY, cCharacterRom[cScreenBuffer[nCursorY * nCols + nCursorX]]);
 
 	// display new character
@@ -69,7 +70,21 @@ void Apple1Terminal::ReceiveOutput(uint8_t dsp)
 	}
 	if (nCursorY == nRows)
 	{
-		//newLine();
+		// scroll up
+		for(int y=0; y<nRows-1; y++)
+			for (int x = 0; x < nCols; x++)
+			{
+				cScreenBuffer[y * nCols + x] = cScreenBuffer[(y + 1) * nCols + x];
+				RenderCharacter(x, y, cCharacterRom[cScreenBuffer[y * nCols + x]]);
+			}
+
+		int y = (nRows - 1);
+		for (int x = 0; x < nCols; x++)
+		{
+			cScreenBuffer[y * nCols + x] = ' ';
+			RenderCharacter(x, y, cCharacterRom[cScreenBuffer[y * nCols + x]]);
+		}
+
 		nCursorY--;
 	}
 
