@@ -29,13 +29,13 @@ void Apple1Terminal::ClearScreen()
 	nCursorY = nCursorX = 0;
 }
 
-olc::Sprite* Apple1Terminal::getScreenSprite()
+void Apple1Terminal::ProcessOutput()
 {
-	return &sprScreen;
-}
+	if (displayQueue.empty())
+		return;
 
-void Apple1Terminal::ReceiveOutput(uint8_t dsp)
-{
+	uint8_t dsp = displayQueue.front();
+
 	// make lower case key upper
 	if (dsp >= 0x61 && dsp <= 0x7A)
 		dsp &= 0x5F;
@@ -71,7 +71,7 @@ void Apple1Terminal::ReceiveOutput(uint8_t dsp)
 	if (nCursorY == nRows)
 	{
 		// scroll up
-		for(int y=0; y<nRows-1; y++)
+		for (int y = 0; y < nRows - 1; y++)
 			for (int x = 0; x < nCols; x++)
 			{
 				cScreenBuffer[y * nCols + x] = cScreenBuffer[(y + 1) * nCols + x];
@@ -91,6 +91,17 @@ void Apple1Terminal::ReceiveOutput(uint8_t dsp)
 	// draw new cursor
 	RenderCharacter(nCursorX, nCursorY, cCharacterRomInverted[cScreenBuffer[nCursorY * nCols + nCursorX]]);
 
+	displayQueue.pop();
+}
+
+olc::Sprite* Apple1Terminal::getScreenSprite()
+{
+	return &sprScreen;
+}
+
+void Apple1Terminal::ReceiveOutput(uint8_t dsp)
+{
+	displayQueue.push(dsp);
 }
 
 void Apple1Terminal::LoadCharacterRom(const std::string& sFileName, uint8_t(&rom)[256][8], bool bInvert)

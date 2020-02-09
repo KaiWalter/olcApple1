@@ -1,4 +1,6 @@
 #pragma once
+#include <queue>
+
 #include "MC6821.h"
 
 class Apple1Terminal
@@ -7,6 +9,7 @@ public:
 	Apple1Terminal(MC6821 *pia);
 	~Apple1Terminal();
 	void ClearScreen();
+	void ProcessOutput();
 	olc::Sprite* getScreenSprite();
 
 private:
@@ -19,6 +22,7 @@ private:
 	uint8_t cCharacterRomInverted[256][8];
 	uint8_t nCursorY;
 	uint8_t nCursorX;
+	std::queue<uint8_t> displayQueue;
 
 	olc::Sprite sprScreen = olc::Sprite(nCols * nCharWidth, nRows * nCharHeight);
 
