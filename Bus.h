@@ -24,6 +24,8 @@ public: // Devices on bus
 public: // Bus Read & Write
 	void write(uint16_t addr, uint8_t data);
 	uint8_t read(uint16_t addr, bool bReadOnly = false);
+	uint16_t RomLow();
+	uint16_t RomHigh();
 
 private:
 	// A count of how many clocks have passed

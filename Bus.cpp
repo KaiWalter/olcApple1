@@ -5,13 +5,19 @@
 
 Bus::Bus()
 {
-	// load the cartridges
+	// load the cartridges & set Reset Vector
+#ifdef TESTROM
+	roms.push_back(std::make_shared<Rom>("6502_functional_test.bin", 0x0400));
+
+	ram[0xFFFC] = 0x00;
+	ram[0xFFFD] = 0x04;
+#else
 	roms.push_back(std::make_shared<Rom>("Apple1_HexMonitor.rom", 0xFF00));
 	roms.push_back(std::make_shared<Rom>("Apple1_basic.rom", 0xE000));
 
-	// set Reset Vector
 	ram[0xFFFC] = 0x00;
 	ram[0xFFFD] = 0xFF;
+#endif
 
 	// Connect CPU to communication bus
 	cpu.ConnectBus(this);
@@ -34,7 +40,6 @@ void Bus::reset()
 void Bus::clock()
 {
 	cpu.clock();
-
 	nSystemClockCounter++;
 }
 
@@ -76,4 +81,21 @@ uint8_t Bus::read(uint16_t addr, bool bReadOnly)
 	}
 
 	return data;
+}
+
+uint16_t Bus::RomLow()
+{
+	uint16_t result = 0xFFFF;
+	for (auto r : roms)
+	{
+		if (r->Low() < result)
+			result = r->Low();
+	}
+
+	return result;
+}
+
+uint16_t Bus::RomHigh()
+{
+	return uint16_t();
 }

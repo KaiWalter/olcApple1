@@ -68,3 +68,13 @@ bool Rom::cpuWrite(uint16_t addr, uint8_t data)
 
 	return false;
 }
+
+uint16_t Rom::Low()
+{
+	return iOffset;
+}
+
+uint16_t Rom::High()
+{
+	return iOffset + iSize - 1;
+}

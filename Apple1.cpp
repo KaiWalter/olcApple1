@@ -12,11 +12,15 @@
 
 
 /*
-
 Reference material:
 http://www.myapplecomputer.net/apple-1-specs.html
 http://www.applefritter.com/book/export/html/22
-Apple 1 HEXROM DISASSEMBLY: https://gist.github.com/robey/1bb6a99cd19e95c81979b1828ad70612
+
+Apple 1 HEXROM DISASSEMBLY:
+https://gist.github.com/robey/1bb6a99cd19e95c81979b1828ad70612
+
+Test ROMs:
+https://github.com/Klaus2m5/6502_65C02_functional_tests
 */
 
 
@@ -42,6 +46,10 @@ public:
 
 		// extract dissassembly
 		mapAsm = a1bus->cpu.disassemble(0xE000, 0xFFFF);
+
+#ifdef TESTROM
+		runEmulator = false;
+#endif
 	}
 
 private:

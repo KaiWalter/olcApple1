@@ -16,6 +16,9 @@ public:
 	bool cpuRead(uint16_t addr, uint8_t& data);
 	bool cpuWrite(uint16_t addr, uint8_t data);
 
+	uint16_t Low();
+	uint16_t High();
+
 private:
 	bool bImageValid = false;
 
