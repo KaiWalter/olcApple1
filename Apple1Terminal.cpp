@@ -1,5 +1,13 @@
 #include "Apple1Terminal.h"
 
+/*
+This implementation of the terminal is not (yet) signal or shift register compliant.
+Reference material:
+https://www.sbprojects.net/projects/apple1/terminal.php
+https://www.sbprojects.net/projects/apple1/a-one-terminal.php
+*/
+
+
 Apple1Terminal::Apple1Terminal(MC6821* pia)
 {
 	// load character ROMs
@@ -22,24 +30,25 @@ void Apple1Terminal::ClearScreen()
 	for (int y = 0; y <= sprScreen.height; y++)
 		for (int x = 0; x <= sprScreen.width; x++)
 			sprScreen.SetPixel(x, y, olc::BLACK);
-	
+
 	for (auto& c : cScreenBuffer)
 		c = ' ';
 
 	nCursorY = nCursorX = 0;
 }
 
-olc::Sprite* Apple1Terminal::getScreenSprite()
+void Apple1Terminal::ProcessOutput()
 {
-	return &sprScreen;
-}
+	if (displayQueue.empty())
+		return;
 
-void Apple1Terminal::ReceiveOutput(uint8_t dsp)
-{
+	uint8_t dsp = displayQueue.front();
+
+	// make lower case key upper
 	if (dsp >= 0x61 && dsp <= 0x7A)
-		dsp &= 0x5F; // make lower case key upper
+		dsp &= 0x5F;
 
-		// clear old cursor
+	// clear old cursor
 	RenderCharacter(nCursorX, nCursorY, cCharacterRom[cScreenBuffer[nCursorY * nCols + nCursorX]]);
 
 	// display new character
@@ -69,13 +78,38 @@ void Apple1Terminal::ReceiveOutput(uint8_t dsp)
 	}
 	if (nCursorY == nRows)
 	{
-		//newLine();
+		// scroll up
+		for (int y = 0; y < nRows - 1; y++)
+			for (int x = 0; x < nCols; x++)
+			{
+				cScreenBuffer[y * nCols + x] = cScreenBuffer[(y + 1) * nCols + x];
+				RenderCharacter(x, y, cCharacterRom[cScreenBuffer[y * nCols + x]]);
+			}
+
+		int y = (nRows - 1);
+		for (int x = 0; x < nCols; x++)
+		{
+			cScreenBuffer[y * nCols + x] = ' ';
+			RenderCharacter(x, y, cCharacterRom[cScreenBuffer[y * nCols + x]]);
+		}
+
 		nCursorY--;
 	}
 
 	// draw new cursor
 	RenderCharacter(nCursorX, nCursorY, cCharacterRomInverted[cScreenBuffer[nCursorY * nCols + nCursorX]]);
 
+	displayQueue.pop();
+}
+
+olc::Sprite* Apple1Terminal::getScreenSprite()
+{
+	return &sprScreen;
+}
+
+void Apple1Terminal::ReceiveOutput(uint8_t dsp)
+{
+	displayQueue.push(dsp);
 }
 
 void Apple1Terminal::LoadCharacterRom(const std::string& sFileName, uint8_t(&rom)[256][8], bool bInvert)

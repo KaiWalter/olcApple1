@@ -192,6 +192,7 @@ private:
 
 		DrawString(10, 370, "ESC = RESET  F5 = run or single step  F2 = step");
 
+		a1term->ProcessOutput();
 		DrawSprite(0, 72, a1term->getScreenSprite());
 
 		return true;
