@@ -1,5 +1,13 @@
 #include "Apple1Terminal.h"
 
+/*
+This implementation of the terminal is not (yet) signal or shift register compliant.
+Reference material:
+https://www.sbprojects.net/projects/apple1/terminal.php
+https://www.sbprojects.net/projects/apple1/a-one-terminal.php
+*/
+
+
 Apple1Terminal::Apple1Terminal(MC6821* pia)
 {
 	// load character ROMs
