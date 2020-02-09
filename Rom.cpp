@@ -19,11 +19,28 @@ Rom::Rom(const std::string& sFileName, uint16_t iOffset)
 	ifs.open(sFileName, std::ifstream::binary);
 	if (ifs.is_open())
 	{
-		this->iSize = std::filesystem::file_size(sFileName);
-		vMemory.resize(this->iSize);
+		auto nSize = std::filesystem::file_size(sFileName);
+		if (nSize > 0xffff)
+			nSize = 0xffff;
+
+		// if 64k ROM skip to offset 
+		if (nSize == 0xffff)
+		{
+			nSize -= iOffset;
+			ifs.seekg(iOffset);
+		}
+
+		// if ROM flows into the vector table, reduce
+		if ((nSize + iOffset) > 0xFFFA)
+		{
+			nSize -= 6;
+		}
+
+		vMemory.resize(nSize);
 		ifs.read((char*)vMemory.data(), vMemory.size());
 
 		this->iOffset = iOffset;
+		this->iSize = nSize;
 		this->bImageValid = true;
 
 		ifs.close();

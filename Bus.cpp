@@ -5,6 +5,9 @@
 
 Bus::Bus()
 {
+	// Clear RAM contents, just in case :P
+	for (auto& i : ram) i = 0x00;
+
 	// load the cartridges & set Reset Vector
 #ifdef TESTROM
 	roms.push_back(std::make_shared<Rom>("6502_functional_test.bin", 0x0400));
@@ -21,9 +24,6 @@ Bus::Bus()
 
 	// Connect CPU to communication bus
 	cpu.ConnectBus(this);
-
-	// Clear RAM contents, just in case :P
-	for (auto &i : ram) i = 0x00;
 }
 
 
@@ -51,7 +51,7 @@ void Bus::write(uint16_t addr, uint8_t data)
 			return;
 	}
 
-	if (addr >= 0xD010 && addr <= 0xD001F)
+	if (addr >= 0xD010 && addr <= 0xD01F)
 	{
 		pia.cpuWrite(addr, data);
 	}
@@ -71,7 +71,7 @@ uint8_t Bus::read(uint16_t addr, bool bReadOnly)
 			return data;
 	}
 
-	if (addr >= 0xD010 && addr <= 0xD001F)
+	if (addr >= 0xD010 && addr <= 0xD01F)
 	{
 		data = pia.cpuRead(addr);
 	}
@@ -86,6 +86,7 @@ uint8_t Bus::read(uint16_t addr, bool bReadOnly)
 uint16_t Bus::RomLow()
 {
 	uint16_t result = 0xFFFF;
+
 	for (auto r : roms)
 	{
 		if (r->Low() < result)
@@ -97,5 +98,13 @@ uint16_t Bus::RomLow()
 
 uint16_t Bus::RomHigh()
 {
-	return uint16_t();
+	uint16_t result = 0x0000;
+
+	for (auto r : roms)
+	{
+		if (r->High() > result)
+			result = r->High();
+	}
+
+	return result;
 }

@@ -45,7 +45,7 @@ public:
 		a1kbd = new Apple1Keyboard(&a1bus->pia, this);
 
 		// extract dissassembly
-		mapAsm = a1bus->cpu.disassemble(0xE000, 0xFFFF);
+		mapAsm = a1bus->cpu.disassemble(a1bus->RomLow(), a1bus->RomHigh());
 
 #ifdef TESTROM
 		runEmulator = false;
