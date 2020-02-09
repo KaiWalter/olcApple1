@@ -44,11 +44,20 @@ public:
 		a1term = new Apple1Terminal(&a1bus->pia);
 		a1kbd = new Apple1Keyboard(&a1bus->pia, this);
 
-		// extract dissassembly
-		mapAsm = a1bus->cpu.disassemble(a1bus->RomLow(), a1bus->RomHigh());
+
 
 #ifdef TESTROM
-		runEmulator = false;
+		//runEmulator = false;
+		std::ofstream romlogfile;
+		romlogfile.open("testrom.txt", std::ios::out | std::ios::trunc);
+		romlogfile << "START-----------------\n";
+		romlogfile.close();
+
+		// extract dissassembly
+		mapAsm = a1bus->cpu.disassemble(0x0000, 0xFFFF);
+#else
+		// extract dissassembly
+		mapAsm = a1bus->cpu.disassemble(a1bus->RomLow(), a1bus->RomHigh());
 #endif
 	}
 
@@ -102,11 +111,23 @@ private:
 		DrawString(x, y + 30, "X: $" + hex(a1bus->cpu.x, 2) + "  [" + std::to_string(a1bus->cpu.x) + "]");
 		DrawString(x, y + 40, "Y: $" + hex(a1bus->cpu.y, 2) + "  [" + std::to_string(a1bus->cpu.y) + "]");
 		DrawString(x, y + 50, "Stack P: $" + hex(a1bus->cpu.stkp, 4));
+
+		DrawString(x + 120, y + 10, "$FFFA: " + hex(a1bus->ram[0xFFFB], 2) + hex(a1bus->ram[0xFFFA], 2));
+		DrawString(x + 120, y + 20, "$FFFC: " + hex(a1bus->ram[0xFFFD], 2) + hex(a1bus->ram[0xFFFC], 2));
+		DrawString(x + 120, y + 30, "$FFFE: " + hex(a1bus->ram[0xFFFF], 2) + hex(a1bus->ram[0xFFFE], 2));
 	}
 
 	void DrawCode(int x, int y, int nLines)
 	{
 		auto it_a = mapAsm.find(a1bus->cpu.pc);
+
+#if TESTROM
+		std::ofstream romlogfile;
+		romlogfile.open("testrom.txt", std::ios::out | std::ios::app);
+		romlogfile << (*it_a).second << "\n";
+		romlogfile.close();
+#endif
+
 		int nLineY = (nLines >> 1) * 10 + y;
 		if (it_a != mapAsm.end())
 		{

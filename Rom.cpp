@@ -23,19 +23,6 @@ Rom::Rom(const std::string& sFileName, uint16_t iOffset)
 		if (nSize > 0xffff)
 			nSize = 0xffff;
 
-		// if 64k ROM skip to offset 
-		if (nSize == 0xffff)
-		{
-			nSize -= iOffset;
-			ifs.seekg(iOffset);
-		}
-
-		// if ROM flows into the vector table, reduce
-		if ((nSize + iOffset) > 0xFFFA)
-		{
-			nSize -= 6;
-		}
-
 		vMemory.resize(nSize);
 		ifs.read((char*)vMemory.data(), vMemory.size());
 

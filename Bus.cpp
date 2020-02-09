@@ -10,10 +10,18 @@ Bus::Bus()
 
 	// load the cartridges & set Reset Vector
 #ifdef TESTROM
-	roms.push_back(std::make_shared<Rom>("6502_functional_test.bin", 0x0400));
+	auto rom = std::make_shared<Rom>("6502_functional_test.bin", 0x0000);
+
+	for (uintmax_t addr = 0x0000; addr < 0xFFFF; addr++)
+	{
+		uint8_t data = 0x00;
+		rom->cpuRead(addr, data);
+		ram[addr] = data;
+	}
 
 	ram[0xFFFC] = 0x00;
 	ram[0xFFFD] = 0x04;
+
 #else
 	roms.push_back(std::make_shared<Rom>("Apple1_HexMonitor.rom", 0xFF00));
 	roms.push_back(std::make_shared<Rom>("Apple1_basic.rom", 0xE000));
@@ -45,9 +53,11 @@ void Bus::clock()
 
 void Bus::write(uint16_t addr, uint8_t data)
 {
+#ifdef TESTROM
+#else
 	for (auto r : roms)
 	{
-		if(r->cpuWrite(addr, data))
+		if (r->cpuWrite(addr, data))
 			return;
 	}
 
@@ -55,16 +65,20 @@ void Bus::write(uint16_t addr, uint8_t data)
 	{
 		pia.cpuWrite(addr, data);
 	}
-	else if (addr >= 0x0000 && addr <= 0xFFFF)
-	{
-		ram[addr] = data;
-	}
+	else
+#endif
+		if (addr >= 0x0000 && addr <= 0xFFFF)
+		{
+			ram[addr] = data;
+		}
 }
 
 uint8_t Bus::read(uint16_t addr, bool bReadOnly)
 {
 	uint8_t data = 0x00;
 
+#ifdef TESTROM
+#else
 	for (auto r : roms)
 	{
 		if (r->cpuRead(addr, data))
@@ -75,10 +89,12 @@ uint8_t Bus::read(uint16_t addr, bool bReadOnly)
 	{
 		data = pia.cpuRead(addr);
 	}
-	else if (addr >= 0x0000 && addr <= 0xFFFF)
-	{
-		data = ram[addr];
-	}
+	else
+#endif
+		if (addr >= 0x0000 && addr <= 0xFFFF)
+		{
+			data = ram[addr];
+		}
 
 	return data;
 }
