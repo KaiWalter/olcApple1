@@ -1,4 +1,5 @@
 #include <iostream>
+#include <ostream>
 #include <sstream>
 
 #include "Bus.h"
@@ -50,7 +51,7 @@ public:
 		//runEmulator = false;
 		std::ofstream romlogfile;
 		romlogfile.open("testrom.txt", std::ios::out | std::ios::trunc);
-		romlogfile << "START-----------------\n";
+		romlogfile << "START-----------------" << std::endl;
 		romlogfile.close();
 
 		// extract dissassembly
@@ -124,7 +125,7 @@ private:
 #if TESTROM
 		std::ofstream romlogfile;
 		romlogfile.open("testrom.txt", std::ios::out | std::ios::app);
-		romlogfile << (*it_a).second << "\n";
+		romlogfile << (*it_a).second << std::endl;
 		romlogfile.close();
 #endif
 
