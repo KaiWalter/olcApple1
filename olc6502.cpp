@@ -1,4 +1,19 @@
 /*
+	This is a modified version of
+		https://github.com/OneLoneCoder/olcNES/blob/master/Part%20%235%20-%20PPU%20Foregrounds/olc6502.cpp
+	to pass these functional tests
+		https://github.com/Klaus2m5/6502_65C02_functional_tests.
+
+	The original version was intended for NES emulation, which does not require decimal mode.
+	Modifications are required to be used in other 6502 emulators.
+
+	Modifications:
+	- Unused flag is only set in PHP operation
+	- ADC / SBC adapted to https://github.com/gianlucag/mos6502 implementation to cover decimal mode
+	- wonderful ADC / SBC removed - may not be totally accurate anymore
+
+	----------------------------------------------------------------------
+
 	olc6502 - An emulation of the 6502/2A03 processor
 	"Thanks Dad for believing computers were gonna be a big deal..." - javidx9
 
@@ -53,7 +68,7 @@
 
 	Files: olc6502.h, olc6502.cpp
 
-	Relevant Video: https://www.youtube.com/watch?v=8XmxKPJDGU0
+	Relevant Video:
 
 	Links
 	~~~~~
@@ -68,7 +83,7 @@
 
 	Author
 	~~~~~~
-	David Barr, aka javidx9, Â©OneLoneCoder 2019
+	David Barr, aka javidx9, ©OneLoneCoder 2019
 */
 
 #include "olc6502.h"
@@ -80,7 +95,7 @@ olc6502::olc6502()
 	// Assembles the translation table. It's big, it's ugly, but it yields a convenient way
 	// to emulate the 6502. I'm certain there are some "code-golf" strategies to reduce this
 	// but I've deliberately kept it verbose for study and alteration
-	
+
 	// It is 16x16 entries. This gives 256 instructions. It is arranged to that the bottom
 	// 4 bits of the instruction choose the column, and the top 4 bits choose the row.
 
@@ -89,9 +104,9 @@ olc6502::olc6502()
 
 	// The table is one big initialiser list of initialiser lists...
 	using a = olc6502;
-	lookup = 
+	lookup =
 	{
-		{ "BRK", &a::BRK, &a::IMP, 7 },{ "ORA", &a::ORA, &a::IZX, 6 },{ "???", &a::XXX, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 8 },{ "???", &a::NOP, &a::IMP, 3 },{ "ORA", &a::ORA, &a::ZP0, 3 },{ "ASL", &a::ASL, &a::ZP0, 5 },{ "???", &a::XXX, &a::IMP, 5 },{ "PHP", &a::PHP, &a::IMP, 3 },{ "ORA", &a::ORA, &a::IMM, 2 },{ "ASL", &a::ASL, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 2 },{ "???", &a::NOP, &a::IMP, 4 },{ "ORA", &a::ORA, &a::ABS, 4 },{ "ASL", &a::ASL, &a::ABS, 6 },{ "???", &a::XXX, &a::IMP, 6 },
+		{ "BRK", &a::BRK, &a::IMM, 7 },{ "ORA", &a::ORA, &a::IZX, 6 },{ "???", &a::XXX, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 8 },{ "???", &a::NOP, &a::IMP, 3 },{ "ORA", &a::ORA, &a::ZP0, 3 },{ "ASL", &a::ASL, &a::ZP0, 5 },{ "???", &a::XXX, &a::IMP, 5 },{ "PHP", &a::PHP, &a::IMP, 3 },{ "ORA", &a::ORA, &a::IMM, 2 },{ "ASL", &a::ASL, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 2 },{ "???", &a::NOP, &a::IMP, 4 },{ "ORA", &a::ORA, &a::ABS, 4 },{ "ASL", &a::ASL, &a::ABS, 6 },{ "???", &a::XXX, &a::IMP, 6 },
 		{ "BPL", &a::BPL, &a::REL, 2 },{ "ORA", &a::ORA, &a::IZY, 5 },{ "???", &a::XXX, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 8 },{ "???", &a::NOP, &a::IMP, 4 },{ "ORA", &a::ORA, &a::ZPX, 4 },{ "ASL", &a::ASL, &a::ZPX, 6 },{ "???", &a::XXX, &a::IMP, 6 },{ "CLC", &a::CLC, &a::IMP, 2 },{ "ORA", &a::ORA, &a::ABY, 4 },{ "???", &a::NOP, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 7 },{ "???", &a::NOP, &a::IMP, 4 },{ "ORA", &a::ORA, &a::ABX, 4 },{ "ASL", &a::ASL, &a::ABX, 7 },{ "???", &a::XXX, &a::IMP, 7 },
 		{ "JSR", &a::JSR, &a::ABS, 6 },{ "AND", &a::AND, &a::IZX, 6 },{ "???", &a::XXX, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 8 },{ "BIT", &a::BIT, &a::ZP0, 3 },{ "AND", &a::AND, &a::ZP0, 3 },{ "ROL", &a::ROL, &a::ZP0, 5 },{ "???", &a::XXX, &a::IMP, 5 },{ "PLP", &a::PLP, &a::IMP, 4 },{ "AND", &a::AND, &a::IMM, 2 },{ "ROL", &a::ROL, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 2 },{ "BIT", &a::BIT, &a::ABS, 4 },{ "AND", &a::AND, &a::ABS, 4 },{ "ROL", &a::ROL, &a::ABS, 6 },{ "???", &a::XXX, &a::IMP, 6 },
 		{ "BMI", &a::BMI, &a::REL, 2 },{ "AND", &a::AND, &a::IZY, 5 },{ "???", &a::XXX, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 8 },{ "???", &a::NOP, &a::IMP, 4 },{ "AND", &a::AND, &a::ZPX, 4 },{ "ROL", &a::ROL, &a::ZPX, 6 },{ "???", &a::XXX, &a::IMP, 6 },{ "SEC", &a::SEC, &a::IMP, 2 },{ "AND", &a::AND, &a::ABY, 4 },{ "???", &a::NOP, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 7 },{ "???", &a::NOP, &a::IMP, 4 },{ "AND", &a::AND, &a::ABX, 4 },{ "ROL", &a::ROL, &a::ABX, 7 },{ "???", &a::XXX, &a::IMP, 7 },
@@ -130,13 +145,13 @@ uint8_t olc6502::read(uint16_t a)
 	// is intentional under normal circumstances. However the disassembler will
 	// want to read the data at an address without changing the state of the
 	// devices on the bus
-	return bus->read(a, false);
+	return bus->cpuRead(a, false);
 }
 
 // Writes a byte to the bus at the specified address
 void olc6502::write(uint16_t a, uint8_t d)
 {
-	bus->write(a, d);
+	bus->cpuWrite(a, d);
 }
 
 
@@ -207,7 +222,6 @@ void olc6502::irq()
 
 		// Then Push the status register to the stack
 		SetFlag(B, 0);
-		SetFlag(U, 1);
 		SetFlag(I, 1);
 		write(0x0100 + stkp, status);
 		stkp--;
@@ -235,7 +249,6 @@ void olc6502::nmi()
 	stkp--;
 
 	SetFlag(B, 0);
-	SetFlag(U, 1);
 	SetFlag(I, 1);
 	write(0x0100 + stkp, status);
 	stkp--;
@@ -271,10 +284,7 @@ void olc6502::clock()
 #ifdef LOGMODE
 		uint16_t log_pc = pc;
 #endif
-		
-		// Always set the unused status flag bit to 1
-		SetFlag(U, true);
-		
+
 		// Increment program counter, we read the opcode byte
 		pc++;
 
@@ -292,9 +302,6 @@ void olc6502::clock()
 		// of cycles this instruction requires before its completed
 		cycles += (additional_cycle1 & additional_cycle2);
 
-		// Always set the unused status flag bit to 1
-		SetFlag(U, true);
-
 #ifdef LOGMODE
 		// This logger dumps every cycle the entire processor state for analysis.
 		// This can be used for debugging the emulation, but has little utility
@@ -303,14 +310,14 @@ void olc6502::clock()
 		if (logfile != nullptr)
 		{
 			fprintf(logfile, "%10d:%02d PC:%04X %s A:%02X X:%02X Y:%02X %s%s%s%s%s%s%s%s STKP:%02X\n",
-				clock_count, 0, log_pc, "XXX", a, x, y,	
-				GetFlag(N) ? "N" : ".",	GetFlag(V) ? "V" : ".",	GetFlag(U) ? "U" : ".",	
-				GetFlag(B) ? "B" : ".",	GetFlag(D) ? "D" : ".",	GetFlag(I) ? "I" : ".",	
-				GetFlag(Z) ? "Z" : ".",	GetFlag(C) ? "C" : ".",	stkp);
+				clock_count, 0, log_pc, "XXX", a, x, y,
+				GetFlag(N) ? "N" : ".", GetFlag(V) ? "V" : ".", GetFlag(U) ? "U" : ".",
+				GetFlag(B) ? "B" : ".", GetFlag(D) ? "D" : ".", GetFlag(I) ? "I" : ".",
+				GetFlag(Z) ? "Z" : ".", GetFlag(C) ? "C" : ".", stkp);
 		}
 #endif
 	}
-	
+
 	// Increment global clock count - This is actually unused unless logging is enabled
 	// but I've kept it in because its a handy watch variable for debugging
 	clock_count++;
@@ -375,7 +382,7 @@ uint8_t olc6502::IMP()
 // the read address to point to the next byte
 uint8_t olc6502::IMM()
 {
-	addr_abs = pc++;	
+	addr_abs = pc++;
 	return 0;
 }
 
@@ -387,7 +394,7 @@ uint8_t olc6502::IMM()
 // one byte instead of the usual two.
 uint8_t olc6502::ZP0()
 {
-	addr_abs = read(pc);	
+	addr_abs = read(pc);
 	pc++;
 	addr_abs &= 0x00FF;
 	return 0;
@@ -465,7 +472,7 @@ uint8_t olc6502::ABX()
 	if ((addr_abs & 0xFF00) != (hi << 8))
 		return 1;
 	else
-		return 0;	
+		return 0;
 }
 
 
@@ -516,7 +523,7 @@ uint8_t olc6502::IND()
 	{
 		addr_abs = (read(ptr + 1) << 8) | read(ptr + 0);
 	}
-	
+
 	return 0;
 }
 
@@ -534,7 +541,7 @@ uint8_t olc6502::IZX()
 	uint16_t hi = read((uint16_t)(t + (uint16_t)x + 1) & 0x00FF);
 
 	addr_abs = (hi << 8) | lo;
-	
+
 	return 0;
 }
 
@@ -554,7 +561,7 @@ uint8_t olc6502::IZY()
 
 	addr_abs = (hi << 8) | lo;
 	addr_abs += y;
-	
+
 	if ((addr_abs & 0xFF00) != (hi << 8))
 		return 1;
 	else
@@ -597,89 +604,50 @@ uint8_t olc6502::fetch()
 // Instruction: Add with Carry In
 // Function:    A = A + M + C
 // Flags Out:   C, V, N, Z
-//
-// Explanation:
-// The purpose of this function is to add a value to the accumulator and a carry bit. If
-// the result is > 255 there is an overflow setting the carry bit. Ths allows you to
-// chain together ADC instructions to add numbers larger than 8-bits. This in itself is
-// simple, however the 6502 supports the concepts of Negativity/Positivity and Signed Overflow.
-//
-// 10000100 = 128 + 4 = 132 in normal circumstances, we know this as unsigned and it allows
-// us to represent numbers between 0 and 255 (given 8 bits). The 6502 can also interpret 
-// this word as something else if we assume those 8 bits represent the range -128 to +127,
-// i.e. it has become signed.
-//
-// Since 132 > 127, it effectively wraps around, through -128, to -124. This wraparound is
-// called overflow, and this is a useful to know as it indicates that the calculation has
-// gone outside the permissable range, and therefore no longer makes numeric sense.
-//
-// Note the implementation of ADD is the same in binary, this is just about how the numbers
-// are represented, so the word 10000100 can be both -124 and 132 depending upon the 
-// context the programming is using it in. We can prove this!
-//
-//  10000100 =  132  or  -124
-// +00010001 = + 17      + 17
-//  ========    ===       ===     See, both are valid additions, but our interpretation of
-//  10010101 =  149  or  -107     the context changes the value, not the hardware!
-//
-// In principle under the -128 to 127 range:
-// 10000000 = -128, 11111111 = -1, 00000000 = 0, 00000000 = +1, 01111111 = +127
-// therefore negative numbers have the most significant set, positive numbers do not
-//
-// To assist us, the 6502 can set the overflow flag, if the result of the addition has
-// wrapped around. V <- ~(A^M) & A^(A+M+C) :D lol, let's work out why!
-//
-// Let's suppose we have A = 30, M = 10 and C = 0
-//          A = 30 = 00011110
-//          M = 10 = 00001010+
-//     RESULT = 40 = 00101000
-//
-// Here we have not gone out of range. The resulting significant bit has not changed.
-// So let's make a truth table to understand when overflow has occurred. Here I take
-// the MSB of each component, where R is RESULT.
-//
-// A  M  R | V | A^R | A^M |~(A^M) | 
-// 0  0  0 | 0 |  0  |  0  |   1   |
-// 0  0  1 | 1 |  1  |  0  |   1   |
-// 0  1  0 | 0 |  0  |  1  |   0   |
-// 0  1  1 | 0 |  1  |  1  |   0   |  so V = ~(A^M) & (A^R)
-// 1  0  0 | 0 |  1  |  1  |   0   |
-// 1  0  1 | 0 |  0  |  1  |   0   |
-// 1  1  0 | 1 |  1  |  0  |   1   |
-// 1  1  1 | 0 |  0  |  0  |   1   |
-//
-// We can see how the above equation calculates V, based on A, M and R. V was chosen
-// based on the following hypothesis:
-//       Positive Number + Positive Number = Negative Result -> Overflow
-//       Negative Number + Negative Number = Positive Result -> Overflow
-//       Positive Number + Negative Number = Either Result -> Cannot Overflow
-//       Positive Number + Positive Number = Positive Result -> OK! No Overflow
-//       Negative Number + Negative Number = Negative Result -> OK! NO Overflow
 
 uint8_t olc6502::ADC()
 {
 	// Grab the data that we are adding to the accumulator
 	fetch();
-	
+
 	// Add is performed in 16-bit domain for emulation to capture any
 	// carry bit, which will exist in bit 8 of the 16-bit word
 	temp = (uint16_t)a + (uint16_t)fetched + (uint16_t)GetFlag(C);
-	
-	// The carry flag out exists in the high byte bit 0
-	SetFlag(C, temp > 255);
-	
+
 	// The Zero flag is set if the result is 0
 	SetFlag(Z, (temp & 0x00FF) == 0);
-	
-	// The signed Overflow flag is set based on all that up there! :D
-	SetFlag(V, (~((uint16_t)a ^ (uint16_t)fetched) & ((uint16_t)a ^ (uint16_t)temp)) & 0x0080);
-	
-	// The negative flag is set to the most significant bit of the result
-	SetFlag(N, temp & 0x80);
-	
+
+	if (GetFlag(D))
+	{
+		// BCD variation
+		if (((a & 0xF) + (fetched & 0xF) + (uint16_t)GetFlag(C)) > 9)
+			temp += 6;
+
+		SetFlag(N, temp & 0x80);
+
+		SetFlag(V, (~((uint16_t)a ^ (uint16_t)fetched) & ((uint16_t)a ^ (uint16_t)temp)) & 0x0080);
+
+		if (temp > 0x99)
+		{
+			temp += 96;
+		}
+		SetFlag(C, temp > 0x99);
+	}
+	else
+	{
+		// The carry flag out exists in the high byte bit 0
+		SetFlag(C, temp > 255);
+
+		// The signed Overflow flag is set based on all that up there! :D
+		SetFlag(V, (~((uint16_t)a ^ (uint16_t)fetched) & ((uint16_t)a ^ (uint16_t)temp)) & 0x0080);
+
+		// The negative flag is set to the most significant bit of the result
+		SetFlag(N, temp & 0x80);
+	}
+
 	// Load the result into the accumulator (it's 8-bit dont forget!)
 	a = temp & 0x00FF;
-	
+
 	// This instruction has the potential to require an additional clock cycle
 	return 1;
 }
@@ -688,44 +656,33 @@ uint8_t olc6502::ADC()
 // Instruction: Subtraction with Borrow In
 // Function:    A = A - M - (1 - C)
 // Flags Out:   C, V, N, Z
-//
-// Explanation:
-// Given the explanation for ADC above, we can reorganise our data
-// to use the same computation for addition, for subtraction by multiplying
-// the data by -1, i.e. make it negative
-//
-// A = A - M - (1 - C)  ->  A = A + -1 * (M - (1 - C))  ->  A = A + (-M + 1 + C)
-//
-// To make a signed positive number negative, we can invert the bits and add 1
-// (OK, I lied, a little bit of 1 and 2s complement :P)
-//
-//  5 = 00000101
-// -5 = 11111010 + 00000001 = 11111011 (or 251 in our 0 to 255 range)
-//
-// The range is actually unimportant, because if I take the value 15, and add 251
-// to it, given we wrap around at 256, the result is 10, so it has effectively 
-// subtracted 5, which was the original intention. (15 + 251) % 256 = 10
-//
-// Note that the equation above used (1-C), but this got converted to + 1 + C.
-// This means we already have the +1, so all we need to do is invert the bits
-// of M, the data(!) therfore we can simply add, exactly the same way we did 
-// before.
 
 uint8_t olc6502::SBC()
 {
 	fetch();
-	
+
 	// Operating in 16-bit domain to capture carry out
-	
-	// We can invert the bottom 8 bits with bitwise xor
-	uint16_t value = ((uint16_t)fetched) ^ 0x00FF;
-	
-	// Notice this is exactly the same as addition from here!
-	temp = (uint16_t)a + value + (uint16_t)GetFlag(C);
-	SetFlag(C, temp & 0xFF00);
-	SetFlag(Z, ((temp & 0x00FF) == 0));
-	SetFlag(V, (temp ^ (uint16_t)a) & (temp ^ value) & 0x0080);
+
+	// - adjusted implementation to mos6502
+	temp = (uint16_t)a - (uint16_t)fetched - (GetFlag(C) == 1 ? 0 : 1);
+	SetFlag(Z, !(temp & 0x00FF));
+	SetFlag(V, (((a ^ temp) & 0x80) && (a ^ fetched) & 0x80));
 	SetFlag(N, temp & 0x0080);
+
+	if (GetFlag(D))
+	{
+		// BCD variation
+		if (((a & 0x0F) - (GetFlag(C) == 1 ? 0 : 1)) < (fetched & 0x0F))
+			temp -= 6;
+
+		if (temp > 0x99)
+		{
+			temp -= 0x60;
+		}
+	}
+
+	SetFlag(C, temp < 0x100);
+
 	a = temp & 0x00FF;
 	return 1;
 }
@@ -779,10 +736,10 @@ uint8_t olc6502::BCC()
 	{
 		cycles++;
 		addr_abs = pc + addr_rel;
-		
-		if((addr_abs & 0xFF00) != (pc & 0xFF00))
+
+		if ((addr_abs & 0xFF00) != (pc & 0xFF00))
 			cycles++;
-		
+
 		pc = addr_abs;
 	}
 	return 0;
@@ -892,9 +849,8 @@ uint8_t olc6502::BPL()
 // Function:    Program Sourced Interrupt
 uint8_t olc6502::BRK()
 {
-	pc++;
-	
-	SetFlag(I, 1);
+	//pc++;    -- duplicate to IMM()
+
 	write(0x0100 + stkp, (pc >> 8) & 0x00FF);
 	stkp--;
 	write(0x0100 + stkp, pc & 0x00FF);
@@ -903,6 +859,7 @@ uint8_t olc6502::BRK()
 	SetFlag(B, 1);
 	write(0x0100 + stkp, status);
 	stkp--;
+	SetFlag(I, 1);
 	SetFlag(B, 0);
 
 	pc = (uint16_t)read(0xFFFE) | ((uint16_t)read(0xFFFF) << 8);
@@ -1067,7 +1024,7 @@ uint8_t olc6502::DEY()
 uint8_t olc6502::EOR()
 {
 	fetch();
-	a = a ^ fetched;	
+	a = a ^ fetched;
 	SetFlag(Z, a == 0x00);
 	SetFlag(N, a & 0x80);
 	return 1;
@@ -1179,7 +1136,7 @@ uint8_t olc6502::LSR()
 {
 	fetch();
 	SetFlag(C, fetched & 0x0001);
-	temp = fetched >> 1;	
+	temp = fetched >> 1;
 	SetFlag(Z, (temp & 0x00FF) == 0x0000);
 	SetFlag(N, temp & 0x0080);
 	if (lookup[opcode].addrmode == &olc6502::IMP)
@@ -1191,10 +1148,6 @@ uint8_t olc6502::LSR()
 
 uint8_t olc6502::NOP()
 {
-	// Sadly not all NOPs are equal, Ive added a few here
-	// based on https://wiki.nesdev.com/w/index.php/CPU_unofficial_opcodes
-	// and will add more based on game compatibility, and ultimately
-	// I'd like to cover all illegal opcodes too
 	switch (opcode) {
 	case 0x1C:
 	case 0x3C:
@@ -1239,7 +1192,6 @@ uint8_t olc6502::PHP()
 {
 	write(0x0100 + stkp, status | B | U);
 	SetFlag(B, 0);
-	SetFlag(U, 0);
 	stkp--;
 	return 0;
 }
@@ -1316,7 +1268,7 @@ uint8_t olc6502::RTS()
 	pc = (uint16_t)read(0x0100 + stkp);
 	stkp++;
 	pc |= (uint16_t)read(0x0100 + stkp) << 8;
-	
+
 	pc++;
 	return 0;
 }
@@ -1503,7 +1455,7 @@ std::map<uint16_t, std::string> olc6502::disassemble(uint16_t nStart, uint16_t n
 		std::string sInst = "$" + hex(addr, 4) + ": ";
 
 		// Read instruction, and get its readable name
-		uint8_t opcode = bus->read(addr, true); addr++;
+		uint8_t opcode = bus->cpuRead(addr, true); addr++;
 		sInst += lookup[opcode].name + " ";
 
 		// Get oprands from desired locations, and form the
@@ -1517,66 +1469,66 @@ std::map<uint16_t, std::string> olc6502::disassemble(uint16_t nStart, uint16_t n
 		}
 		else if (lookup[opcode].addrmode == &olc6502::IMM)
 		{
-			value = bus->read(addr, true); addr++;
+			value = bus->cpuRead(addr, true); addr++;
 			sInst += "#$" + hex(value, 2) + " {IMM}";
 		}
 		else if (lookup[opcode].addrmode == &olc6502::ZP0)
 		{
-			lo = bus->read(addr, true); addr++;
-			hi = 0x00;												
+			lo = bus->cpuRead(addr, true); addr++;
+			hi = 0x00;
 			sInst += "$" + hex(lo, 2) + " {ZP0}";
 		}
 		else if (lookup[opcode].addrmode == &olc6502::ZPX)
 		{
-			lo = bus->read(addr, true); addr++;
-			hi = 0x00;														
+			lo = bus->cpuRead(addr, true); addr++;
+			hi = 0x00;
 			sInst += "$" + hex(lo, 2) + ", X {ZPX}";
 		}
 		else if (lookup[opcode].addrmode == &olc6502::ZPY)
 		{
-			lo = bus->read(addr, true); addr++;
-			hi = 0x00;														
+			lo = bus->cpuRead(addr, true); addr++;
+			hi = 0x00;
 			sInst += "$" + hex(lo, 2) + ", Y {ZPY}";
 		}
 		else if (lookup[opcode].addrmode == &olc6502::IZX)
 		{
-			lo = bus->read(addr, true); addr++;
-			hi = 0x00;								
+			lo = bus->cpuRead(addr, true); addr++;
+			hi = 0x00;
 			sInst += "($" + hex(lo, 2) + ", X) {IZX}";
 		}
 		else if (lookup[opcode].addrmode == &olc6502::IZY)
 		{
-			lo = bus->read(addr, true); addr++;
-			hi = 0x00;								
+			lo = bus->cpuRead(addr, true); addr++;
+			hi = 0x00;
 			sInst += "($" + hex(lo, 2) + "), Y {IZY}";
 		}
 		else if (lookup[opcode].addrmode == &olc6502::ABS)
 		{
-			lo = bus->read(addr, true); addr++;
-			hi = bus->read(addr, true); addr++;
+			lo = bus->cpuRead(addr, true); addr++;
+			hi = bus->cpuRead(addr, true); addr++;
 			sInst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + " {ABS}";
 		}
 		else if (lookup[opcode].addrmode == &olc6502::ABX)
 		{
-			lo = bus->read(addr, true); addr++;
-			hi = bus->read(addr, true); addr++;
+			lo = bus->cpuRead(addr, true); addr++;
+			hi = bus->cpuRead(addr, true); addr++;
 			sInst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + ", X {ABX}";
 		}
 		else if (lookup[opcode].addrmode == &olc6502::ABY)
 		{
-			lo = bus->read(addr, true); addr++;
-			hi = bus->read(addr, true); addr++;
+			lo = bus->cpuRead(addr, true); addr++;
+			hi = bus->cpuRead(addr, true); addr++;
 			sInst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + ", Y {ABY}";
 		}
 		else if (lookup[opcode].addrmode == &olc6502::IND)
 		{
-			lo = bus->read(addr, true); addr++;
-			hi = bus->read(addr, true); addr++;
+			lo = bus->cpuRead(addr, true); addr++;
+			hi = bus->cpuRead(addr, true); addr++;
 			sInst += "($" + hex((uint16_t)(hi << 8) | lo, 4) + ") {IND}";
 		}
 		else if (lookup[opcode].addrmode == &olc6502::REL)
 		{
-			value = bus->read(addr, true); addr++;
+			value = bus->cpuRead(addr, true); addr++;
 			sInst += "$" + hex(value, 2) + " [$" + hex(addr + (int8_t)value, 4) + "] {REL}";
 		}
 

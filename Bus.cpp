@@ -51,7 +51,7 @@ void Bus::clock()
 	nSystemClockCounter++;
 }
 
-void Bus::write(uint16_t addr, uint8_t data)
+void Bus::cpuWrite(uint16_t addr, uint8_t data)
 {
 #ifdef TESTROM
 #else
@@ -73,7 +73,7 @@ void Bus::write(uint16_t addr, uint8_t data)
 		}
 }
 
-uint8_t Bus::read(uint16_t addr, bool bReadOnly)
+uint8_t Bus::cpuRead(uint16_t addr, bool bReadOnly)
 {
 	uint8_t data = 0x00;
 

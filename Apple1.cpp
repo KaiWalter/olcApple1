@@ -48,12 +48,6 @@ public:
 
 
 #ifdef TESTROM
-		//runEmulator = false;
-		std::ofstream romlogfile;
-		romlogfile.open("testrom.txt", std::ios::out | std::ios::trunc);
-		romlogfile << "START-----------------" << std::endl;
-		romlogfile.close();
-
 		// extract dissassembly
 		mapAsm = a1bus->cpu.disassemble(0x0000, 0xFFFF);
 #else
@@ -87,7 +81,7 @@ private:
 			std::string sOffset = "$" + hex(nAddr, 4) + ":";
 			for (int col = 0; col < nColumns; col++)
 			{
-				sOffset += " " + hex(a1bus->read(nAddr, true), 2);
+				sOffset += " " + hex(a1bus->cpuRead(nAddr, true), 2);
 				nAddr += 1;
 			}
 			DrawString(nRamX, nRamY, sOffset);
@@ -121,13 +115,6 @@ private:
 	void DrawCode(int x, int y, int nLines)
 	{
 		auto it_a = mapAsm.find(a1bus->cpu.pc);
-
-#if TESTROM
-		std::ofstream romlogfile;
-		romlogfile.open("testrom.txt", std::ios::out | std::ios::app);
-		romlogfile << (*it_a).second << std::endl;
-		romlogfile.close();
-#endif
 
 		int nLineY = (nLines >> 1) * 10 + y;
 		if (it_a != mapAsm.end())
@@ -178,6 +165,9 @@ private:
 	{
 		Clear(olc::DARK_BLUE);
 
+		if (a1bus->cpu.pc == 0x37c7)
+			int magic = 42;
+
 		// process cpu cycle
 		if (runEmulator)
 		{
@@ -187,6 +177,8 @@ private:
 			} while (!a1bus->cpu.complete());
 		}
 
+#if TESTROM
+#else
 		// check for emulator keys pressed
 		if (GetKey(olc::Key::F2).bPressed)
 		{
@@ -208,14 +200,18 @@ private:
 			// check for Apple1 Keyboard
 			a1kbd->ProcessKey();
 		}
+#endif
 
 		DrawCpu(40 * 8 + 10, 2);
+#if TESTROM
+#else
 		DrawCode(40 * 8 + 10, 72, 26);
 
 		DrawString(10, 370, "ESC = RESET  F5 = run or single step  F2 = step");
 
 		a1term->ProcessOutput();
 		DrawSprite(0, 72, a1term->getScreenSprite());
+#endif
 
 		return true;
 	}
