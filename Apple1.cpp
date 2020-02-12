@@ -165,9 +165,6 @@ private:
 	{
 		Clear(olc::DARK_BLUE);
 
-		if (a1bus->cpu.pc == 0x37c7)
-			int magic = 42;
-
 		// process cpu cycle
 		if (runEmulator)
 		{
