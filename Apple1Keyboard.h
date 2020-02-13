@@ -5,7 +5,7 @@
 class Apple1Keyboard
 {
 public:
-	Apple1Keyboard(MC6821* pia, olc::PixelGameEngine* olc);
+	Apple1Keyboard(std::shared_ptr<MC6821> pia, std::shared_ptr<olc::PixelGameEngine> olc);
 	~Apple1Keyboard();
 
 	void ProcessKey();
@@ -13,7 +13,7 @@ public:
 private:
 	std::map<olc::Key, uint8_t> mapKeys;
 	std::map<olc::Key, uint8_t> MapOLCKeyToAppleKey();
-	MC6821* pia;
-	olc::PixelGameEngine* olc;
+	std::shared_ptr<MC6821> pia;
+	std::shared_ptr<olc::PixelGameEngine> olc;
 };
 

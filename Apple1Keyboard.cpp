@@ -1,10 +1,8 @@
 #include "Apple1Keyboard.h"
 
-Apple1Keyboard::Apple1Keyboard(MC6821* pia, olc::PixelGameEngine* olc)
+Apple1Keyboard::Apple1Keyboard(std::shared_ptr<MC6821> pia, std::shared_ptr<olc::PixelGameEngine> olc) :
+	pia{ pia }, olc{ olc }
 {
-	this->pia = pia;
-	this->olc = olc;
-
 	// map keys
 	mapKeys = MapOLCKeyToAppleKey();
 }

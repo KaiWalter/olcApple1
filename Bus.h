@@ -13,8 +13,8 @@ public:
 	~Bus();
 
 public: // Devices on bus
-	olc6502 cpu;
-	MC6821 pia;
+	std::shared_ptr<olc6502> cpu;
+	std::shared_ptr<MC6821> pia;
 
 	std::list<std::shared_ptr<Rom>> roms;
 

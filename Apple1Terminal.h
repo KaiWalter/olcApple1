@@ -6,7 +6,7 @@
 class Apple1Terminal
 {
 public:
-	Apple1Terminal(MC6821 *pia);
+	Apple1Terminal(std::shared_ptr<MC6821> pia);
 	~Apple1Terminal();
 	void ClearScreen();
 	void ProcessOutput();

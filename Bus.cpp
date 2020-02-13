@@ -5,6 +5,9 @@
 
 Bus::Bus()
 {
+	cpu = std::make_shared<olc6502>();
+	pia = std::make_shared<MC6821>();
+
 	// Clear RAM contents, just in case :P
 	for (auto& i : ram) i = 0x00;
 
@@ -31,7 +34,7 @@ Bus::Bus()
 #endif
 
 	// Connect CPU to communication bus
-	cpu.ConnectBus(this);
+	cpu->ConnectBus(this);
 }
 
 
@@ -41,13 +44,13 @@ Bus::~Bus()
 
 void Bus::reset()
 {
-	cpu.reset();
+	cpu->reset();
 	nSystemClockCounter = 0;
 }
 
 void Bus::clock()
 {
-	cpu.clock();
+	cpu->clock();
 	nSystemClockCounter++;
 }
 
@@ -63,7 +66,7 @@ void Bus::cpuWrite(uint16_t addr, uint8_t data)
 
 	if (addr >= 0xD010 && addr <= 0xD01F)
 	{
-		pia.cpuWrite(addr, data);
+		pia->cpuWrite(addr, data);
 	}
 	else
 #endif
@@ -87,7 +90,7 @@ uint8_t Bus::cpuRead(uint16_t addr, bool bReadOnly)
 
 	if (addr >= 0xD010 && addr <= 0xD01F)
 	{
-		data = pia.cpuRead(addr);
+		data = pia->cpuRead(addr);
 	}
 	else
 #endif

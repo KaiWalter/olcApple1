@@ -8,7 +8,7 @@ https://www.sbprojects.net/projects/apple1/a-one-terminal.php
 */
 
 
-Apple1Terminal::Apple1Terminal(MC6821* pia)
+Apple1Terminal::Apple1Terminal(std::shared_ptr<MC6821> pia)
 {
 	// load character ROMs
 	LoadCharacterRom("Apple1_charmap.rom", cCharacterRom, false);

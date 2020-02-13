@@ -28,31 +28,31 @@ https://github.com/Klaus2m5/6502_65C02_functional_tests
 class Apple1 : public olc::PixelGameEngine
 {
 public:
-	Bus* a1bus;
-	Apple1Terminal* a1term;
-	Apple1Keyboard* a1kbd;
+	std::shared_ptr<Bus> a1bus;
+	std::shared_ptr<Apple1Terminal> a1term;
+	std::shared_ptr<Apple1Keyboard> a1kbd;
 
 private:
 	std::map<uint16_t, std::string> mapAsm;
 	bool runEmulator = true;
+	bool displayStatus = true;
+	bool displayCode = true;
 
 public:
 	Apple1()
 	{
 		sAppName = "Apple 1 Emulator";
 
-		a1bus = new Bus();
-		a1term = new Apple1Terminal(&a1bus->pia);
-		a1kbd = new Apple1Keyboard(&a1bus->pia, this);
-
-
+		a1bus = std::make_shared<Bus>();
+		a1term = std::make_shared<Apple1Terminal>(a1bus->pia);
+		a1kbd = std::make_shared<Apple1Keyboard>(a1bus->pia, (std::shared_ptr<olc::PixelGameEngine>)this);
 
 #ifdef TESTROM
 		// extract dissassembly
-		mapAsm = a1bus->cpu.disassemble(0x0000, 0xFFFF);
+		mapAsm = a1bus->cpu->disassemble(0x0000, 0xFFFF);
 #else
 		// extract dissassembly
-		mapAsm = a1bus->cpu.disassemble(a1bus->RomLow(), a1bus->RomHigh());
+		mapAsm = a1bus->cpu->disassemble(a1bus->RomLow(), a1bus->RomHigh());
 #endif
 	}
 
@@ -93,19 +93,19 @@ private:
 	{
 		std::string status = "STATUS: ";
 		DrawString(x, y, "STATUS:", olc::WHITE);
-		DrawString(x + 64, y, "N", a1bus->cpu.status & olc6502::N ? olc::GREEN : olc::RED);
-		DrawString(x + 80, y, "V", a1bus->cpu.status & olc6502::V ? olc::GREEN : olc::RED);
-		DrawString(x + 96, y, "-", a1bus->cpu.status & olc6502::U ? olc::GREEN : olc::RED);
-		DrawString(x + 112, y, "B", a1bus->cpu.status & olc6502::B ? olc::GREEN : olc::RED);
-		DrawString(x + 128, y, "D", a1bus->cpu.status & olc6502::D ? olc::GREEN : olc::RED);
-		DrawString(x + 144, y, "I", a1bus->cpu.status & olc6502::I ? olc::GREEN : olc::RED);
-		DrawString(x + 160, y, "Z", a1bus->cpu.status & olc6502::Z ? olc::GREEN : olc::RED);
-		DrawString(x + 178, y, "C", a1bus->cpu.status & olc6502::C ? olc::GREEN : olc::RED);
-		DrawString(x, y + 10, "PC: $" + hex(a1bus->cpu.pc, 4));
-		DrawString(x, y + 20, "A: $" + hex(a1bus->cpu.a, 2) + "  [" + std::to_string(a1bus->cpu.a) + "]");
-		DrawString(x, y + 30, "X: $" + hex(a1bus->cpu.x, 2) + "  [" + std::to_string(a1bus->cpu.x) + "]");
-		DrawString(x, y + 40, "Y: $" + hex(a1bus->cpu.y, 2) + "  [" + std::to_string(a1bus->cpu.y) + "]");
-		DrawString(x, y + 50, "Stack P: $" + hex(a1bus->cpu.stkp, 4));
+		DrawString(x + 64, y, "N", a1bus->cpu->status & olc6502::N ? olc::GREEN : olc::RED);
+		DrawString(x + 80, y, "V", a1bus->cpu->status & olc6502::V ? olc::GREEN : olc::RED);
+		DrawString(x + 96, y, "-", a1bus->cpu->status & olc6502::U ? olc::GREEN : olc::RED);
+		DrawString(x + 112, y, "B", a1bus->cpu->status & olc6502::B ? olc::GREEN : olc::RED);
+		DrawString(x + 128, y, "D", a1bus->cpu->status & olc6502::D ? olc::GREEN : olc::RED);
+		DrawString(x + 144, y, "I", a1bus->cpu->status & olc6502::I ? olc::GREEN : olc::RED);
+		DrawString(x + 160, y, "Z", a1bus->cpu->status & olc6502::Z ? olc::GREEN : olc::RED);
+		DrawString(x + 178, y, "C", a1bus->cpu->status & olc6502::C ? olc::GREEN : olc::RED);
+		DrawString(x, y + 10, "PC: $" + hex(a1bus->cpu->pc, 4));
+		DrawString(x, y + 20, "A: $" + hex(a1bus->cpu->a, 2) + "  [" + std::to_string(a1bus->cpu->a) + "]");
+		DrawString(x, y + 30, "X: $" + hex(a1bus->cpu->x, 2) + "  [" + std::to_string(a1bus->cpu->x) + "]");
+		DrawString(x, y + 40, "Y: $" + hex(a1bus->cpu->y, 2) + "  [" + std::to_string(a1bus->cpu->y) + "]");
+		DrawString(x, y + 50, "Stack P: $" + hex(a1bus->cpu->stkp, 4));
 
 		DrawString(x + 120, y + 10, "$FFFA: " + hex(a1bus->ram[0xFFFB], 2) + hex(a1bus->ram[0xFFFA], 2));
 		DrawString(x + 120, y + 20, "$FFFC: " + hex(a1bus->ram[0xFFFD], 2) + hex(a1bus->ram[0xFFFC], 2));
@@ -114,7 +114,7 @@ private:
 
 	void DrawCode(int x, int y, int nLines)
 	{
-		auto it_a = mapAsm.find(a1bus->cpu.pc);
+		auto it_a = mapAsm.find(a1bus->cpu->pc);
 
 		int nLineY = (nLines >> 1) * 10 + y;
 		if (it_a != mapAsm.end())
@@ -130,7 +130,7 @@ private:
 			}
 		}
 
-		it_a = mapAsm.find(a1bus->cpu.pc);
+		it_a = mapAsm.find(a1bus->cpu->pc);
 		nLineY = (nLines >> 1) * 10 + y;
 		if (it_a != mapAsm.begin())
 		{
@@ -156,7 +156,7 @@ private:
 	void SystemReset()
 	{
 		// Reset
-		a1bus->cpu.reset();
+		a1bus->cpu->reset();
 
 		a1term->ClearScreen();
 	}
@@ -170,8 +170,8 @@ private:
 		{
 			do
 			{
-				a1bus->cpu.clock();
-			} while (!a1bus->cpu.complete());
+				a1bus->cpu->clock();
+			} while (!a1bus->cpu->complete());
 		}
 
 #if TESTROM
@@ -181,12 +181,20 @@ private:
 		{
 			do
 			{
-				a1bus->cpu.clock();
-			} while (!a1bus->cpu.complete());
+				a1bus->cpu->clock();
+			} while (!a1bus->cpu->complete());
 		}
 		else if (GetKey(olc::Key::ESCAPE).bPressed)
 		{
 			SystemReset();
+		}
+		else if (GetKey(olc::Key::F3).bPressed)
+		{
+			displayStatus = !displayStatus;
+		}
+		else if (GetKey(olc::Key::F4).bPressed)
+		{
+			displayCode = !displayCode;
 		}
 		else if (GetKey(olc::Key::F5).bPressed)
 		{
@@ -199,12 +207,15 @@ private:
 		}
 #endif
 
-		DrawCpu(40 * 8 + 10, 2);
+		if (displayStatus)
+			DrawCpu(40 * 8 + 10, 2);
 #if TESTROM
 #else
-		DrawCode(40 * 8 + 10, 72, 26);
+		if (displayCode)
+			DrawCode(40 * 8 + 10, 72, 26);
 
-		DrawString(10, 370, "ESC = RESET  F5 = run or single step  F2 = step");
+		DrawString(10, 370, "ESC = RESET  F2 = step");
+		DrawString(10, 380, "F3 = status ON/OFF  F4 = code ON/OFF  F5 = single step ON/OFF");
 
 		a1term->ProcessOutput();
 		DrawSprite(0, 72, a1term->getScreenSprite());
@@ -219,13 +230,11 @@ private:
 */
 int main()
 {
-	auto* demo = new Apple1();
+	auto demo = std::make_shared<Apple1>();
 
 	demo->Construct(600, 400, 2, 2);
 
 	demo->Start();
-
-	delete demo;
 
 	return 0;
 }
