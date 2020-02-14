@@ -444,7 +444,7 @@ namespace olc // All OneLoneCoder stuff will now exist in the "olc" namespace
 		UP, DOWN, LEFT, RIGHT,
 		SPACE, TAB, SHIFT, CTRL, INS, DEL, HOME, END, PGUP, PGDN,
 		BACK, ESCAPE, RETURN, ENTER, PAUSE, SCROLL,
-		PERIOD, MINUS, PLUS,
+		PERIOD, COMMA, MINUS, PLUS,
 		NP0, NP1, NP2, NP3, NP4, NP5, NP6, NP7, NP8, NP9,
 		NP_MUL, NP_DIV, NP_ADD, NP_SUB, NP_DECIMAL,
 	};
@@ -2272,6 +2272,7 @@ namespace olc
 		mapKeys[VK_END] = Key::END; mapKeys[VK_PRIOR] = Key::PGUP; mapKeys[VK_NEXT] = Key::PGDN; mapKeys[VK_INSERT] = Key::INS;
 		mapKeys[VK_SHIFT] = Key::SHIFT; mapKeys[VK_CONTROL] = Key::CTRL;
 		mapKeys[VK_SPACE] = Key::SPACE; 
+		mapKeys[VK_OEM_COMMA] = Key::COMMA;
 		mapKeys[VK_OEM_PERIOD] = Key::PERIOD;
 		mapKeys[VK_OEM_MINUS] = Key::MINUS;
 		mapKeys[VK_OEM_PLUS] = Key::PLUS;
@@ -2426,7 +2427,8 @@ namespace olc
 
 		mapKeys[XK_Down] = Key::DOWN; mapKeys[XK_Left] = Key::LEFT; mapKeys[XK_Right] = Key::RIGHT; mapKeys[XK_Up] = Key::UP;
 		mapKeys[XK_KP_Enter] = Key::ENTER; mapKeys[XK_Return] = Key::ENTER; 
-		mapKeys[XK_period] = Key::PERIOD; mapKeys[XK_minus] = Key::MINUS; mapKeys[XK_plus] = Key::PLUS;
+		mapKeys[XK_period] = Key::PERIOD; mapKeys[XK_comma] = Key::COMMA;
+		mapKeys[XK_minus] = Key::MINUS; mapKeys[XK_plus] = Key::PLUS;
 
 		mapKeys[XK_BackSpace] = Key::BACK; mapKeys[XK_Escape] = Key::ESCAPE; mapKeys[XK_Linefeed] = Key::ENTER;	mapKeys[XK_Pause] = Key::PAUSE;
 		mapKeys[XK_Scroll_Lock] = Key::SCROLL; mapKeys[XK_Tab] = Key::TAB; mapKeys[XK_Delete] = Key::DEL; mapKeys[XK_Home] = Key::HOME;

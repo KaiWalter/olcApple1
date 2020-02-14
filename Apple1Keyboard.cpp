@@ -5,6 +5,7 @@ Apple1Keyboard::Apple1Keyboard(std::shared_ptr<MC6821> pia, std::shared_ptr<olc:
 {
 	// map keys
 	mapKeys = MapOLCKeyToAppleKey();
+	mapShiftedKeys = MapOLCShiftedKeyToAppleKey();
 }
 
 Apple1Keyboard::~Apple1Keyboard()
@@ -13,20 +14,41 @@ Apple1Keyboard::~Apple1Keyboard()
 
 void Apple1Keyboard::ProcessKey()
 {
-	// check for regular keys pressed
-	for (const auto& k : mapKeys)
+	uint8_t keyPressed = 0;
+
+	if (olc->GetKey(olc::SHIFT).bHeld)
 	{
-		if (olc->GetKey(k.first).bPressed)
+		// check for shifted keys pressed
+		for (const auto& k : mapShiftedKeys)
 		{
-			if (k.second > 0 && k.second < 0x60)
+			if (olc->GetKey(k.first).bPressed)
 			{
-				pia->setCA1(SignalProcessing::Signal::Fall); // bring keyboard strobe to low to force active transition
-				pia->setInputA(k.second | 0x80); // bit 7 is constantly set (+5V)
-				pia->setCA1(SignalProcessing::Signal::Rise); // send only pulse
-				pia->setCA1(SignalProcessing::Signal::Fall); // 20 micro secs are not worth emulating
+				keyPressed = k.second;
 				break;
 			}
+		}
+	}
+	else
+	{
+		// check for regular keys pressed
+		for (const auto& k : mapKeys)
+		{
+			if (olc->GetKey(k.first).bPressed)
+			{
+				keyPressed = k.second;
+				break;
+			}
+		}
+	}
 
+	if (keyPressed)
+	{
+		if (keyPressed > 0 && keyPressed < 0x60)
+		{
+			pia->setCA1(SignalProcessing::Signal::Fall); // bring keyboard strobe to low to force active transition
+			pia->setInputA(keyPressed | 0x80); // bit 7 is constantly set (+5V)
+			pia->setCA1(SignalProcessing::Signal::Rise); // send only pulse
+			pia->setCA1(SignalProcessing::Signal::Fall); // 20 micro secs are not worth emulating
 		}
 	}
 }
@@ -48,6 +70,7 @@ std::map<olc::Key, uint8_t> Apple1Keyboard::MapOLCKeyToAppleKey()
 	mapKey[olc::Key::NP_DIV] = 0x2F;
 
 	mapKey[olc::Key::PERIOD] = 0x2E;
+	mapKey[olc::Key::COMMA] = 0x2C;
 
 	mapKey[olc::Key::K0] = 0x30;
 	mapKey[olc::Key::K1] = 0x31;
@@ -101,3 +124,25 @@ std::map<olc::Key, uint8_t> Apple1Keyboard::MapOLCKeyToAppleKey()
 	return mapKey;
 }
 
+std::map<olc::Key, uint8_t> Apple1Keyboard::MapOLCShiftedKeyToAppleKey()
+{
+	std::map<olc::Key, uint8_t> mapShiftedKey;
+
+	// de-DE mapping
+	mapShiftedKey[olc::Key::K0] = 0x3D;
+	mapShiftedKey[olc::Key::K1] = 0x21;
+	mapShiftedKey[olc::Key::K2] = 0x22;
+	mapShiftedKey[olc::Key::K4] = 0x24;
+	mapShiftedKey[olc::Key::K5] = 0x25;
+	mapShiftedKey[olc::Key::K6] = 0x26;
+	mapShiftedKey[olc::Key::K7] = 0x2F;
+	mapShiftedKey[olc::Key::K8] = 0x28;
+	mapShiftedKey[olc::Key::K9] = 0x29;
+
+	mapShiftedKey[olc::Key::PLUS] = 0x2A;
+	mapShiftedKey[olc::Key::PERIOD] = 0x3A;
+	mapShiftedKey[olc::Key::COMMA] = 0x3B;
+	mapShiftedKey[olc::Key::MINUS] = 0x5F;
+
+	return mapShiftedKey;
+}
