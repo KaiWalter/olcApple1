@@ -9,8 +9,11 @@ public:
 	Apple1Terminal(std::shared_ptr<MC6821> pia);
 	~Apple1Terminal();
 	void ClearScreen();
-	void ProcessOutput();
+	bool ProcessOutput();
 	olc::Sprite* getScreenSprite();
+
+	static uint16_t Width();
+	static uint16_t Height();
 
 private:
 	const static uint8_t nRows = 24;

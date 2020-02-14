@@ -37,10 +37,10 @@ void Apple1Terminal::ClearScreen()
 	nCursorY = nCursorX = 0;
 }
 
-void Apple1Terminal::ProcessOutput()
+bool Apple1Terminal::ProcessOutput()
 {
 	if (displayQueue.empty())
-		return;
+		return false;
 
 	uint8_t dsp = displayQueue.front();
 
@@ -100,11 +100,23 @@ void Apple1Terminal::ProcessOutput()
 	RenderCharacter(nCursorX, nCursorY, cCharacterRomInverted[cScreenBuffer[nCursorY * nCols + nCursorX]]);
 
 	displayQueue.pop();
+
+	return true;
 }
 
 olc::Sprite* Apple1Terminal::getScreenSprite()
 {
 	return &sprScreen;
+}
+
+uint16_t Apple1Terminal::Width()
+{
+	return nCols * nCharWidth;
+}
+
+uint16_t Apple1Terminal::Height()
+{
+	return nRows * nCharHeight;
 }
 
 void Apple1Terminal::ReceiveOutput(uint8_t dsp)

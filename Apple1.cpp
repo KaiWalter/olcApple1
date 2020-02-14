@@ -164,8 +164,6 @@ private:
 
 	bool OnUserUpdate(float fElapsedTime)
 	{
-		Clear(olc::DARK_BLUE);
-
 		// process cpu cycle
 		if (runEmulator)
 		{
@@ -177,25 +175,26 @@ private:
 				do
 				{
 					a1bus->cpu->clock();
-			} while (!a1bus->cpu->complete());
+				} while (!a1bus->cpu->complete());
 			}
-
 		}
 
 #if TESTROM
 #else
 		// check for emulator keys pressed
-		if (GetKey(olc::Key::F2).bPressed)
+		if (GetKey(olc::Key::ESCAPE).bPressed)
+		{
+			SystemReset();
+		}
+#if DEBUGSCREEN
+		else 		if (GetKey(olc::Key::F2).bPressed)
 		{
 			do
 			{
 				a1bus->cpu->clock();
 			} while (!a1bus->cpu->complete());
 		}
-		else if (GetKey(olc::Key::ESCAPE).bPressed)
-		{
-			SystemReset();
-		}
+
 		else if (GetKey(olc::Key::F3).bPressed)
 		{
 			displayStatus = !displayStatus;
@@ -208,12 +207,17 @@ private:
 		{
 			runEmulator = !runEmulator;
 		}
+#else
 		else
 		{
 			// check for Apple1 Keyboard
 			a1kbd->ProcessKey();
 		}
 #endif
+#endif
+
+#if DEBUGSCREEN
+		Clear(olc::DARK_BLUE);
 
 		if (displayStatus)
 			DrawCpu(40 * 8 + 10, 2);
@@ -228,6 +232,14 @@ private:
 		a1term->ProcessOutput();
 		DrawSprite(0, 72, a1term->getScreenSprite());
 #endif
+#else
+		// only refresh display when output changed
+		if (a1term->ProcessOutput())
+		{
+			Clear(olc::BLACK);
+			DrawSprite(0, 0, a1term->getScreenSprite());
+		}
+#endif
 
 		return true;
 	}
@@ -240,7 +252,11 @@ int main()
 {
 	auto demo = std::make_shared<Apple1>();
 
+#if DEBUGSCREEN
 	demo->Construct(600, 400, 2, 2);
+#else
+	demo->Construct(Apple1Terminal::Width(), Apple1Terminal::Height(), 2, 2);
+#endif
 
 	demo->Start();
 
