@@ -37,6 +37,7 @@ private:
 	bool runEmulator = true;
 	bool displayStatus = true;
 	bool displayCode = true;
+	float fResidualTime = 0;
 
 public:
 	Apple1()
@@ -168,10 +169,17 @@ private:
 		// process cpu cycle
 		if (runEmulator)
 		{
-			do
+			if (fResidualTime > 0.0f)
+				fResidualTime -= fElapsedTime;
+			else
 			{
-				a1bus->cpu->clock();
+				fResidualTime += (1.0f / 60.0f) - fElapsedTime;
+				do
+				{
+					a1bus->cpu->clock();
 			} while (!a1bus->cpu->complete());
+			}
+
 		}
 
 #if TESTROM
