@@ -164,19 +164,13 @@ private:
 
 	bool OnUserUpdate(float fElapsedTime)
 	{
-		// process cpu cycle
+		// process 1 cpu instruction
 		if (runEmulator)
 		{
-			if (fResidualTime > 0.0f)
-				fResidualTime -= fElapsedTime;
-			else
+			do
 			{
-				fResidualTime += (1.0f / 60.0f) - fElapsedTime;
-				do
-				{
-					a1bus->cpu->clock();
-				} while (!a1bus->cpu->complete());
-			}
+				a1bus->cpu->clock();
+			} while (!a1bus->cpu->complete());
 		}
 
 #if TESTROM
@@ -187,14 +181,13 @@ private:
 			SystemReset();
 		}
 #if DEBUGSCREEN
-		else 		if (GetKey(olc::Key::F2).bPressed)
+		else if (GetKey(olc::Key::F2).bPressed)
 		{
 			do
 			{
 				a1bus->cpu->clock();
 			} while (!a1bus->cpu->complete());
 		}
-
 		else if (GetKey(olc::Key::F3).bPressed)
 		{
 			displayStatus = !displayStatus;
@@ -207,13 +200,12 @@ private:
 		{
 			runEmulator = !runEmulator;
 		}
-#else
+#endif
 		else
 		{
 			// check for Apple1 Keyboard
 			a1kbd->ProcessKey();
 		}
-#endif
 #endif
 
 #if DEBUGSCREEN
