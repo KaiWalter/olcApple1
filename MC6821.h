@@ -15,7 +15,7 @@ namespace SignalProcessing
 
 	enum InterruptSignal : uint8_t
 	{
-		None = 0,
+		NoSignal = 0,
 		IRQ = 1,
 		NMI = 2,
 		BRK = 4

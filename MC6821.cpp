@@ -166,7 +166,7 @@ void MC6821::cpuWrite(uint16_t addr, uint8_t data)
 		else
 		{
 			nDDRA = data; // into data direction register A
-			nDDRA_neg = (byte)~data;
+			nDDRA_neg = (uint8_t)~data;
 		}
 		break;
 

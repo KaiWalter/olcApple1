@@ -9,3 +9,9 @@ Borrowed test ROMs from https://github.com/Klaus2m5/6502_65C02_functional_tests.
 ## Apple 1 with Hex Monitor
 
 ![](/img/Apple1_HexMon.png)
+
+## compile in Linux
+
+```
+g++ -o olcApple1 ./*.cpp -lX11 -lGL -lpthread -lpng -lstdc++fs -std=c++17
+```

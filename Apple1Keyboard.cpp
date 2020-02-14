@@ -41,7 +41,9 @@ std::map<olc::Key, uint8_t> Apple1Keyboard::MapOLCKeyToAppleKey()
 	mapKey[olc::Key::SPACE] = 0x20;
 	mapKey[olc::Key::NP_MUL] = 0x2A;
 	mapKey[olc::Key::NP_ADD] = 0x2B;
+	mapKey[olc::Key::PLUS] = 0x2B;
 	mapKey[olc::Key::NP_SUB] = 0x2D;
+	mapKey[olc::Key::MINUS] = 0x2D;
 	mapKey[olc::Key::NP_DECIMAL] = 0x2E;
 	mapKey[olc::Key::NP_DIV] = 0x2F;
 
